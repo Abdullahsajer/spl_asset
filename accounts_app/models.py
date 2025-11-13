@@ -8,8 +8,12 @@ class Profile(models.Model):
         ('admin', 'مدير نظام'),
     ]
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="اسم المستخدم")
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, verbose_name="الدور")
+
+    class Meta:
+        verbose_name = "ملف المستخدم"
+        verbose_name_plural = "ملفات المستخدمين"
 
     def __str__(self):
         return f"{self.user.username} ({self.get_role_display()})"

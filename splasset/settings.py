@@ -23,11 +23,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # ⭐ تطبيقات المشروع
-    'accounts_app',
-    'locations_app',
-    'assets_app',
-    'inventory_app',
-    'reports_app',
+    'accounts_app.apps.AccountsAppConfig',
+    'locations_app.apps.LocationsAppConfig',
+    'assets_app.apps.AssetsAppConfig',
+    'inventory_app.apps.InventoryAppConfig',
+    'reports_app.apps.ReportsAppConfig',
 ]
 
 # الوسائط الوسطية Middleware
