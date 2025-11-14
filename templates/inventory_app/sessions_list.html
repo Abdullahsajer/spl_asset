@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}جلسات الجرد{% endblock %}
+
+{% block content %}
+<h2>جلسات الجرد</h2>
+
+<ul>
+{% for s in sessions %}
+    <li>
+        <a href="{% url 'inventory_app:session_detail' s.id %}">
+            جلسة رقم {{ s.id }} — {{ s.building }}
+        </a>
+    </li>
+{% endfor %}
+</ul>
+
+{% endblock %}

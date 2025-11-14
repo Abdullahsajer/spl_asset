@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام جرد الأصول{% endblock %}</title>
+
+    <style>
+        body {
+            font-family: "Cairo", sans-serif;
+            background: #f3f6fa;
+            margin: 0;
+            padding: 0;
+        }
+        main {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    {% include 'navbar.html' %}
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+</body>
+</html>

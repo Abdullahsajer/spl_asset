@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بدء جلسة جرد</title>
+
+    <style>
+        body {
+            font-family: "Cairo", sans-serif;
+            background: #f3f7fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #0d6efd;
+            padding: 14px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header .menu {
+            font-size: 26px;
+            cursor: pointer;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .box {
+            background: #fff;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 480px;
+            margin: 20px auto;
+        }
+
+        .error-box {
+            background: #ffdddd;
+            color: #a00;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        label {
+            font-size: 15px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: #0d6efd;
+            color: #fff;
+            font-size: 17px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #0a58ca;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="menu">☰</div>
+    <h1>بدء جلسة جرد</h1>
+</header>
+
+<div class="container">
+    <div class="box">
+
+        {% if error %}
+        <div class="error-box">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <label>اختر المنطقة:</label>
+            <select name="region">
+                <option value="">اختر المنطقة</option>
+                {% for r in regions %}
+                <option value="{{ r.id }}">{{ r.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label>اختر المدينة:</label>
+            <select name="city">
+                <option value="">اختر المدينة</option>
+                {% for c in cities %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label>اختر المبنى:</label>
+            <select name="building">
+                <option value="">اختر المبنى</option>
+                {% for b in buildings %}
+                <option value="{{ b.id }}">{{ b.name }}</option>
+                {% endfor %}
+            </select>
+
+            <button class="btn">بدء جلسة الجرد</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

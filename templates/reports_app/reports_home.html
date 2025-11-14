@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}التقارير{% endblock %}
+
+{% block content %}
+<h2>التقارير</h2>
+
+<ul>
+    <li><a href="{% url 'reports_app:building_status_report' %}">تقرير حالة مبنى</a></li>
+    <li><a href="{% url 'reports_app:sessions_status_report' %}">تقرير حالات الجلسات</a></li>
+    <li><a href="{% url 'reports_app:summary_assets_report' %}">تقرير ختامي شامل</a></li>
+</ul>
+
+{% endblock %}

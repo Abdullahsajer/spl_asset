@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}المناطق{% endblock %}
+
+{% block content %}
+<h2>قائمة المناطق</h2>
+
+<ul>
+{% for region in regions %}
+    <li>{{ region.name }}</li>
+{% endfor %}
+</ul>
+
+{% endblock %}

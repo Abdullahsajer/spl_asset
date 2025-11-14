@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+{% block title %}جرد الأصول - المسح المستمر{% endblock %}
+
+{% block content %}
+
+<style>
+    .scan-container {
+        max-width: 780px;
+        margin: 0 auto;
+    }
+
+    .top-info {
+        margin-bottom: 10px;
+    }
+
+    .top-info h2 {
+        margin: 0 0 6px 0;
+    }
+
+    #lastScan {
+        background: #0d6efd;
+        color: #fff;
+        padding: 10px;
+        text-align: center;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 15px;
+    }
+
+    /* كاميرا */
+    .scanner-wrapper {
+        background: #fff;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    /* html5-qrcode container */
+    #reader {
+        width: 100%;
+    }
+
+    /* قائمة الأصول */
+    .asset-list {
+        background: #fff;
+        padding: 10px;
+        border-radius: 10px;
+        max-height: 320px;
+        overflow-y: auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .asset-item {
+        border-bottom: 1px solid #eee;
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+    }
+
+    .asset-item:last-child {
+        border-bottom: none;
+    }
+
+    .asset-item:hover {
+        transform: scale(1.01);
+    }
+
+    .asset-item.green {
+        background: #c8f7c5; /* موجود */
+    }
+
+    .asset-item.red {
+        background: #f7c5c5; /* مفقود (لاحقاً) */
+    }
+
+    .asset-item.yellow {
+        background: #fff6c5; /* مضاف جديد (لاحقاً) */
+    }
+
+    .asset-main-line {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .asset-sub-line {
+        font-size: 12px;
+        color: #555;
+    }
+
+    /* أزرار أسفل الصفحة */
+    .action-buttons {
+        margin-top: 12px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .action-buttons button {
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+    }
+
+    .btn-temp    { background: #ffc107; color: #000; }
+    .btn-save    { background: #0d6efd; color: #fff; }
+    .btn-resume  { background: #198754; color: #fff; }
+    .btn-cancel  { background: #dc3545; color: #fff; }
+    .btn-toggle  { background: #6c757d; color: #fff; }
+
+    /* نافذة تفاصيل الأصل */
+    #assetDetailsBox {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 85%;
+        max-width: 480px;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        border-radius: 14px;
+        padding: 18px;
+        display: none;
+        z-index: 999;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    #assetDetailsBox h3 {
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.45);
+        display: none;
+        z-index: 998;
+    }
+
+    #detailContent p {
+        margin: 4px 0;
+        font-size: 14px;
+    }
+
+    @media (min-width: 780px) {
+        /* تقسيم شاشة: أعلى الكاميرا – أسفل القائمة */
+        .scan-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 12px;
+        }
+        .scanner-wrapper {
+            margin-bottom: 0;
+        }
+        .asset-list {
+            max-height: 420px;
+        }
+    }
+</style>
+
+<!-- مكتبة html5-qrcode من CDN -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<div class="scan-container">
+
+    <div class="top-info">
+        <h2>المسح المستمر لجلسة الجرد</h2>
+        <div id="lastScan">👆 بانتظار المسح...</div>
+    </div>
+
+    <div class="scan-layout">
+
+        <!-- الكاميرا / قارئ الباركود -->
+        <div class="scanner-wrapper">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <strong>الكاميرا</strong>
+                <button type="button" class="btn-toggle" id="toggleScannerBtn" style="padding:4px 10px;font-size:12px;">
+                    ⏹ إيقاف المسح
+                </button>
+            </div>
+            <div id="reader"></div>
+        </div>
+
+        <!-- قائمة الأصول للجلسة الحالية -->
+        <div>
+            <div class="asset-list" id="assetList">
+
+                {% for item in items %}
+                <div class="asset-item"
+                     id="item-{{ item.barcode }}"
+                     data-barcode="{{ item.barcode }}"
+                     data-desc="{{ item.asset.description|default:'' }}"
+                     data-code="{{ item.asset.asset_code|default:'' }}"
+                     data-building="{{ item.asset.building|default:'' }}"
+                     onclick="showAssetDetails(this)">
+                    <div class="asset-main-line">
+                        {{ item.asset.description|default:"(بدون وصف)" }}
+                    </div>
+                    <div class="asset-sub-line">
+                        الباركود: {{ item.barcode }}
+                    </div>
+                </div>
+                {% empty %}
+                <p>لا توجد أصول مرتبطة بهذه الجلسة حتى الآن.</p>
+                {% endfor %}
+
+            </div>
+
+            <!-- أزرار التحكم في الجلسة (بدون منطق باك إند حالياً) -->
+            <div class="action-buttons">
+                <button type="button" class="btn-temp">💾 حفظ مؤقت</button>
+                <button type="button" class="btn-resume">⏳ استئناف لاحقاً</button>
+                <button type="button" class="btn-save">📤 إرسال للمشرف</button>
+                <button type="button" class="btn-cancel">❌ إلغاء الجلسة</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- نافذة التفاصيل -->
+<div id="overlay" onclick="closeDetails()"></div>
+
+<div id="assetDetailsBox">
+    <h3>تفاصيل الأصل</h3>
+    <div id="detailContent"></div>
+    <button onclick="closeDetails()"
+            style="background:#0d6efd;color:#fff;padding:10px;border:none;border-radius:8px;width:100%;margin-top:10px;">
+        إغلاق
+    </button>
+</div>
+
+<script>
+    // =========================
+    //  خريطة الباركود ← العنصر
+    // =========================
+    const itemMap = {};
+    document.querySelectorAll('.asset-item').forEach(el => {
+        const bc = el.dataset.barcode;
+        if (bc) itemMap[bc] = el;
+    });
+
+    const lastScanDiv = document.getElementById("lastScan");
+    let lastBarcode = null;
+    let lastScanTime = 0;
+
+    // =========================
+    //  تفعيل html5-qrcode
+    // =========================
+    let html5Scanner = null;
+    const toggleBtn = document.getElementById("toggleScannerBtn");
+    let scannerRunning = true;
+
+    function onScanSuccess(decodedText, decodedResult) {
+        // منع تكرار نفس الباركود خلال فترة قصيرة
+        const now = Date.now();
+        if (decodedText === lastBarcode && (now - lastScanTime) < 1500) {
+            return;
+        }
+        lastBarcode = decodedText;
+        lastScanTime = now;
+
+        handleScan(decodedText.trim());
+    }
+
+    function onScanFailure(error) {
+        // تجاهل الأخطاء المتكررة (لا نعرض شيء للمستخدم هنا)
+    }
+
+    function startScanner() {
+        if (html5Scanner) return;
+
+        html5Scanner = new Html5QrcodeScanner(
+            "reader",
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.777,
+            },
+            false
+        );
+        html5Scanner.render(onScanSuccess, onScanFailure);
+        scannerRunning = true;
+        toggleBtn.textContent = "⏹ إيقاف المسح";
+    }
+
+    function stopScanner() {
+        if (!html5Scanner) return;
+
+        html5Scanner.clear().then(() => {
+            html5Scanner = null;
+            scannerRunning = false;
+            toggleBtn.textContent = "▶ تشغيل المسح";
+            document.getElementById("reader").innerHTML = "";
+        }).catch(err => {
+            console.error("لم يتم إيقاف القارئ بشكل صحيح:", err);
+        });
+    }
+
+    toggleBtn.addEventListener("click", function () {
+        if (scannerRunning) {
+            stopScanner();
+        } else {
+            startScanner();
+        }
+    });
+
+    // ابدأ المسح عند تحميل الصفحة
+    document.addEventListener("DOMContentLoaded", startScanner);
+
+    // =========================
+    //  التعامل مع الباركود
+    // =========================
+    function handleScan(barcode) {
+        lastScanDiv.innerHTML = "📦 آخر مسح: " + barcode;
+
+        const el = itemMap[barcode];
+        if (el) {
+            // تلوين كـ موجود
+            el.classList.add("green");
+
+            // سحب العنصر للعرض
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+            // نبضة بسيطة للفت الانتباه
+            el.style.transform = "scale(1.03)";
+            setTimeout(() => {
+                el.style.transform = "scale(1)";
+            }, 200);
+
+        } else {
+            // لاحقاً: هنا نفتح نافذة "إضافة أصل جديد"
+            alert("هذا الباركود غير موجود ضمن قائمة الأصول لهذه الجلسة.\nلاحقاً سنربطه بإضافة أصل جديد.");
+        }
+    }
+
+    // =========================
+    //  نافذة تفاصيل الأصل
+    // =========================
+    function showAssetDetails(element) {
+        const barcode = element.dataset.barcode || "";
+        const desc = element.dataset.desc || "";
+        const code = element.dataset.code || "";
+        const building = element.dataset.building || "";
+
+        const html = `
+            <p><strong>رمز الأصل:</strong> ${code || '(غير متوفر)'}</p>
+            <p><strong>الوصف:</strong> ${desc || '(بدون وصف)'}</p>
+            <p><strong>الباركود:</strong> ${barcode}</p>
+            <p><strong>الموقع:</strong> ${building || '(غير محدد)'}</p>
+        `;
+        document.getElementById("detailContent").innerHTML = html;
+
+        document.getElementById("assetDetailsBox").style.display = "block";
+        document.getElementById("overlay").style.display = "block";
+    }
+
+    function closeDetails() {
+        document.getElementById("assetDetailsBox").style.display = "none";
+        document.getElementById("overlay").style.display = "none";
+    }
+</script>
+
+{% endblock %}

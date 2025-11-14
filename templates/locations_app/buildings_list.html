@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}المباني{% endblock %}
+
+{% block content %}
+<h2>قائمة المباني</h2>
+
+<ul>
+{% for b in buildings %}
+    <li>{{ b.name }} — {{ b.city.name }} — {{ b.city.region.name }}</li>
+{% endfor %}
+</ul>
+
+{% endblock %}
