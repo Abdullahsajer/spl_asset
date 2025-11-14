@@ -8,15 +8,7 @@
         max-width: 780px;
         margin: 0 auto;
     }
-
-    .top-info {
-        margin-bottom: 10px;
-    }
-
-    .top-info h2 {
-        margin: 0 0 6px 0;
-    }
-
+    .top-info { margin-bottom: 10px; }
     #lastScan {
         background: #0d6efd;
         color: #fff;
@@ -24,10 +16,8 @@
         text-align: center;
         border-radius: 8px;
         margin-bottom: 10px;
-        font-size: 15px;
     }
 
-    /* كاميرا */
     .scanner-wrapper {
         background: #fff;
         padding: 10px;
@@ -36,12 +26,6 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
-    /* html5-qrcode container */
-    #reader {
-        width: 100%;
-    }
-
-    /* قائمة الأصول */
     .asset-list {
         background: #fff;
         padding: 10px;
@@ -50,122 +34,72 @@
         overflow-y: auto;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-
     .asset-item {
         border-bottom: 1px solid #eee;
         padding: 8px;
         border-radius: 8px;
         cursor: pointer;
-        transition: background 0.2s, transform 0.1s;
+        transition: 0.2s;
     }
+    .asset-item.green { background: #c8f7c5; }
+    .asset-item.yellow { background: #fff6c5; }
 
-    .asset-item:last-child {
-        border-bottom: none;
-    }
+    /* زرار الصفحة */
+    .action-buttons { margin-top: 12px; display: grid; gap: 8px; }
+    .action-buttons button { padding: 12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; }
+    .btn-save { background:#0d6efd; color:#fff; }
 
-    .asset-item:hover {
-        transform: scale(1.01);
-    }
-
-    .asset-item.green {
-        background: #c8f7c5; /* موجود */
-    }
-
-    .asset-item.red {
-        background: #f7c5c5; /* مفقود (لاحقاً) */
-    }
-
-    .asset-item.yellow {
-        background: #fff6c5; /* مضاف جديد (لاحقاً) */
-    }
-
-    .asset-main-line {
-        font-weight: 600;
-        font-size: 14px;
-    }
-
-    .asset-sub-line {
-        font-size: 12px;
-        color: #555;
-    }
-
-    /* أزرار أسفل الصفحة */
-    .action-buttons {
-        margin-top: 12px;
-        display: grid;
-        gap: 8px;
-    }
-
-    .action-buttons button {
-        width: 100%;
-        padding: 11px;
-        border: none;
-        border-radius: 8px;
-        font-size: 15px;
-        cursor: pointer;
-    }
-
-    .btn-temp    { background: #ffc107; color: #000; }
-    .btn-save    { background: #0d6efd; color: #fff; }
-    .btn-resume  { background: #198754; color: #fff; }
-    .btn-cancel  { background: #dc3545; color: #fff; }
-    .btn-toggle  { background: #6c757d; color: #fff; }
-
-    /* نافذة تفاصيل الأصل */
-    #assetDetailsBox {
+    /* Popup: تفاصيل الأصل */
+    #overlay, #addNewAssetOverlay {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        width: 85%;
-        max-width: 480px;
-        transform: translate(-50%, -50%);
-        background: #fff;
-        border-radius: 14px;
-        padding: 18px;
-        display: none;
-        z-index: 999;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    }
-
-    #assetDetailsBox h3 {
-        margin-top: 0;
-        margin-bottom: 8px;
-    }
-
-    #overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
         background: rgba(0,0,0,0.45);
         display: none;
         z-index: 998;
     }
 
-    #detailContent p {
-        margin: 4px 0;
-        font-size: 14px;
+    .popup-box {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 85%;
+        max-width: 480px;
+        background: #fff;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        z-index: 999;
+        display: none;
     }
 
-    @media (min-width: 780px) {
-        /* تقسيم شاشة: أعلى الكاميرا – أسفل القائمة */
-        .scan-layout {
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 12px;
-        }
-        .scanner-wrapper {
-            margin-bottom: 0;
-        }
-        .asset-list {
-            max-height: 420px;
-        }
+    .popup-box input, .popup-box select {
+        width: 100%; padding: 10px; margin-bottom: 10px;
+        border-radius: 8px; border: 1px solid #ddd;
     }
 </style>
 
-<!-- مكتبة html5-qrcode من CDN -->
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+    const SESSION_ID = {{ session.id }};
+    const SCAN_UPDATE_URL = "{% url 'inventory_app:scan_update_api' session.id %}";
+    const ADD_NEW_ASSET_URL = "{% url 'inventory_app:add_new_asset_api' session.id %}";
+    const CLOSE_SESSION_URL = "{% url 'inventory_app:close_session' session.id %}";
+
+    /* CSRF */
+    function getCookie(name) {
+        let value = null;
+        document.cookie.split(";").forEach(cookie => {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                value = decodeURIComponent(cookie.split("=")[1]);
+            }
+        });
+        return value;
+    }
+    const csrftoken = getCookie("csrftoken");
+</script>
 
 <div class="scan-container">
 
@@ -176,195 +110,238 @@
 
     <div class="scan-layout">
 
-        <!-- الكاميرا / قارئ الباركود -->
+        <!-- الكاميرا -->
         <div class="scanner-wrapper">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <strong>الكاميرا</strong>
-                <button type="button" class="btn-toggle" id="toggleScannerBtn" style="padding:4px 10px;font-size:12px;">
-                    ⏹ إيقاف المسح
-                </button>
-            </div>
+            <strong>الكاميرا</strong>
             <div id="reader"></div>
         </div>
 
-        <!-- قائمة الأصول للجلسة الحالية -->
+        <!-- القائمة -->
         <div>
+
             <div class="asset-list" id="assetList">
 
                 {% for item in items %}
-                <div class="asset-item"
+                <div class="asset-item{% if item.status == 'found' %} green{% endif %}"
                      id="item-{{ item.barcode }}"
                      data-barcode="{{ item.barcode }}"
-                     data-desc="{{ item.asset.description|default:'' }}"
-                     data-code="{{ item.asset.asset_code|default:'' }}"
-                     data-building="{{ item.asset.building|default:'' }}"
+                     data-desc="{{ item.asset.description }}"
+                     data-code="{{ item.asset.asset_code }}"
                      onclick="showAssetDetails(this)">
-                    <div class="asset-main-line">
-                        {{ item.asset.description|default:"(بدون وصف)" }}
-                    </div>
-                    <div class="asset-sub-line">
-                        الباركود: {{ item.barcode }}
-                    </div>
+
+                    <div><strong>{{ item.asset.description }}</strong></div>
+                    <div>الباركود: {{ item.barcode }}</div>
                 </div>
-                {% empty %}
-                <p>لا توجد أصول مرتبطة بهذه الجلسة حتى الآن.</p>
                 {% endfor %}
 
             </div>
 
-            <!-- أزرار التحكم في الجلسة (بدون منطق باك إند حالياً) -->
             <div class="action-buttons">
-                <button type="button" class="btn-temp">💾 حفظ مؤقت</button>
-                <button type="button" class="btn-resume">⏳ استئناف لاحقاً</button>
-                <button type="button" class="btn-save">📤 إرسال للمشرف</button>
-                <button type="button" class="btn-cancel">❌ إلغاء الجلسة</button>
+                <button class="btn-save" onclick="finishSession()">✔️ إنهاء الجلسة</button>
             </div>
+
         </div>
 
     </div>
 </div>
 
-<!-- نافذة التفاصيل -->
+<!-- =========================
+      Popup تفاصيل الأصل
+========================= -->
 <div id="overlay" onclick="closeDetails()"></div>
 
-<div id="assetDetailsBox">
+<div id="assetDetailsBox" class="popup-box">
     <h3>تفاصيل الأصل</h3>
     <div id="detailContent"></div>
-    <button onclick="closeDetails()"
-            style="background:#0d6efd;color:#fff;padding:10px;border:none;border-radius:8px;width:100%;margin-top:10px;">
+    <button onclick="closeDetails()" style="background:#0d6efd;color:#fff;padding:10px;border:none;border-radius:8px;width:100%;">
         إغلاق
     </button>
 </div>
 
+<!-- =========================
+      Popup إضافة أصل جديد
+========================= -->
+<div id="addNewAssetOverlay" onclick="closeAddNewAsset()"></div>
+
+<div id="addNewAssetBox" class="popup-box">
+
+    <h3>إضافة أصل جديد</h3>
+
+    <div id="newAssetError" style="color:#a00;display:none;margin-bottom:8px;"></div>
+
+    <input id="new_barcode" readonly>
+    <input id="new_description" placeholder="الوصف">
+    <input id="new_asset_code" placeholder="رمز الأصل">
+    <input id="new_category" placeholder="الفئة">
+    <input id="new_subcategory" placeholder="الفئة الفرعية">
+    <select id="new_condition">
+        <option value="">حالة الأصل</option>
+        <option value="جيد">جيد</option>
+        <option value="متوسط">متوسط</option>
+        <option value="تالف">تالف</option>
+    </select>
+
+    <button onclick="saveNewAsset()" style="background:#0d6efd;color:#fff;padding:10px;border:none;border-radius:8px;width:100%;">
+        حفظ الأصل الجديد
+    </button>
+
+    <button onclick="closeAddNewAsset()" style="background:#6c757d;color:#fff;padding:10px;border:none;border-radius:8px;width:100%;margin-top:10px;">
+        إلغاء
+    </button>
+
+</div>
+
 <script>
-    // =========================
-    //  خريطة الباركود ← العنصر
-    // =========================
+
+    /* ============================
+           خريطة عناصر الجرد
+    ============================ */
     const itemMap = {};
-    document.querySelectorAll('.asset-item').forEach(el => {
-        const bc = el.dataset.barcode;
-        if (bc) itemMap[bc] = el;
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".asset-item").forEach(el => {
+            itemMap[el.dataset.barcode] = el;
+        });
     });
 
-    const lastScanDiv = document.getElementById("lastScan");
-    let lastBarcode = null;
-    let lastScanTime = 0;
-
-    // =========================
-    //  تفعيل html5-qrcode
-    // =========================
-    let html5Scanner = null;
-    const toggleBtn = document.getElementById("toggleScannerBtn");
-    let scannerRunning = true;
-
-    function onScanSuccess(decodedText, decodedResult) {
-        // منع تكرار نفس الباركود خلال فترة قصيرة
-        const now = Date.now();
-        if (decodedText === lastBarcode && (now - lastScanTime) < 1500) {
-            return;
-        }
-        lastBarcode = decodedText;
-        lastScanTime = now;
-
-        handleScan(decodedText.trim());
+    /* ============================
+               تشغيل الكاميرا
+    ============================ */
+    function onScanSuccess(text) {
+        handleScan(text.trim());
     }
+    new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }).render(onScanSuccess);
 
-    function onScanFailure(error) {
-        // تجاهل الأخطاء المتكررة (لا نعرض شيء للمستخدم هنا)
-    }
+    /* ============================
+              معالجة المسح
+    ============================ */
+    function handleScan(barcode) {
+        lastScanDiv.innerText = "📦 آخر مسح: " + barcode;
 
-    function startScanner() {
-        if (html5Scanner) return;
-
-        html5Scanner = new Html5QrcodeScanner(
-            "reader",
-            {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.777,
+        fetch(SCAN_UPDATE_URL, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "Content-Type": "application/x-www-form-urlencoded",
             },
-            false
-        );
-        html5Scanner.render(onScanSuccess, onScanFailure);
-        scannerRunning = true;
-        toggleBtn.textContent = "⏹ إيقاف المسح";
-    }
+            body: new URLSearchParams({ barcode })
+        })
+        .then(r => r.json())
+        .then(data => {
 
-    function stopScanner() {
-        if (!html5Scanner) return;
+            if (data.status === "found") {
+                const el = itemMap[barcode];
+                el.classList.add("green");
+                el.scrollIntoView({ behavior:"smooth", block:"center" });
+            }
 
-        html5Scanner.clear().then(() => {
-            html5Scanner = null;
-            scannerRunning = false;
-            toggleBtn.textContent = "▶ تشغيل المسح";
-            document.getElementById("reader").innerHTML = "";
-        }).catch(err => {
-            console.error("لم يتم إيقاف القارئ بشكل صحيح:", err);
+            else if (data.status === "not_in_list") {
+                openAddNewAsset(barcode);
+            }
         });
     }
 
-    toggleBtn.addEventListener("click", function () {
-        if (scannerRunning) {
-            stopScanner();
-        } else {
-            startScanner();
-        }
-    });
-
-    // ابدأ المسح عند تحميل الصفحة
-    document.addEventListener("DOMContentLoaded", startScanner);
-
-    // =========================
-    //  التعامل مع الباركود
-    // =========================
-    function handleScan(barcode) {
-        lastScanDiv.innerHTML = "📦 آخر مسح: " + barcode;
-
-        const el = itemMap[barcode];
-        if (el) {
-            // تلوين كـ موجود
-            el.classList.add("green");
-
-            // سحب العنصر للعرض
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-
-            // نبضة بسيطة للفت الانتباه
-            el.style.transform = "scale(1.03)";
-            setTimeout(() => {
-                el.style.transform = "scale(1)";
-            }, 200);
-
-        } else {
-            // لاحقاً: هنا نفتح نافذة "إضافة أصل جديد"
-            alert("هذا الباركود غير موجود ضمن قائمة الأصول لهذه الجلسة.\nلاحقاً سنربطه بإضافة أصل جديد.");
-        }
+    /* ============================
+        Popup إضافة أصل جديد
+    ============================ */
+    function openAddNewAsset(barcode) {
+        document.getElementById("new_barcode").value = barcode;
+        document.getElementById("addNewAssetOverlay").style.display = "block";
+        document.getElementById("addNewAssetBox").style.display = "block";
     }
 
-    // =========================
-    //  نافذة تفاصيل الأصل
-    // =========================
-    function showAssetDetails(element) {
-        const barcode = element.dataset.barcode || "";
-        const desc = element.dataset.desc || "";
-        const code = element.dataset.code || "";
-        const building = element.dataset.building || "";
+    function closeAddNewAsset() {
+        document.getElementById("addNewAssetOverlay").style.display = "none";
+        document.getElementById("addNewAssetBox").style.display = "none";
+    }
 
+    function saveNewAsset() {
+
+        const data = new URLSearchParams({
+            barcode: document.getElementById("new_barcode").value,
+            description: document.getElementById("new_description").value,
+            asset_code: document.getElementById("new_asset_code").value,
+            category: document.getElementById("new_category").value,
+            subcategory: document.getElementById("new_subcategory").value,
+            condition: document.getElementById("new_condition").value,
+        });
+
+        fetch(ADD_NEW_ASSET_URL, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: data
+        })
+        .then(r => r.json())
+        .then(data => {
+
+            if (data.status === "success") {
+
+                const list = document.getElementById("assetList");
+                const div = document.createElement("div");
+                div.className = "asset-item yellow";
+                div.id = "item-" + data.barcode;
+                div.dataset.barcode = data.barcode;
+                div.dataset.desc = data.description;
+                div.dataset.code = data.asset_code;
+                div.innerHTML = `
+                    <div><strong>${data.description}</strong></div>
+                    <div>الباركود: ${data.barcode}</div>
+                `;
+
+                list.prepend(div);
+                itemMap[data.barcode] = div;
+
+                closeAddNewAsset();
+            }
+            else {
+                const box = document.getElementById("newAssetError");
+                box.innerText = data.message;
+                box.style.display = "block";
+            }
+        });
+    }
+
+    /* ============================
+        Popup تفاصيل الأصل
+    ============================ */
+    function showAssetDetails(el) {
         const html = `
-            <p><strong>رمز الأصل:</strong> ${code || '(غير متوفر)'}</p>
-            <p><strong>الوصف:</strong> ${desc || '(بدون وصف)'}</p>
-            <p><strong>الباركود:</strong> ${barcode}</p>
-            <p><strong>الموقع:</strong> ${building || '(غير محدد)'}</p>
+            <p><strong>الوصف:</strong> ${el.dataset.desc}</p>
+            <p><strong>الباركود:</strong> ${el.dataset.barcode}</p>
+            <p><strong>رمز الأصل:</strong> ${el.dataset.code}</p>
         `;
         document.getElementById("detailContent").innerHTML = html;
-
-        document.getElementById("assetDetailsBox").style.display = "block";
         document.getElementById("overlay").style.display = "block";
+        document.getElementById("assetDetailsBox").style.display = "block";
     }
 
     function closeDetails() {
-        document.getElementById("assetDetailsBox").style.display = "none";
         document.getElementById("overlay").style.display = "none";
+        document.getElementById("assetDetailsBox").style.display = "none";
     }
+
+    /* ============================
+         إنهاء الجلسة
+    ============================ */
+    function finishSession() {
+
+        if (!confirm("هل تريد إنهاء الجلسة؟")) return;
+
+        fetch(CLOSE_SESSION_URL, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            alert("تم إنهاء الجلسة بنجاح");
+            window.location.href = "/inventory/sessions/" + data.session_id + "/";
+        });
+    }
+
 </script>
 
 {% endblock %}

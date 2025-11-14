@@ -1,9 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from locations_app.models import Region, City, Building
 from assets_app.models import Asset
 
 
+# ======================================
+#        نموذج جلسة الجرد
+# ======================================
 class InventorySession(models.Model):
 
     STATUS_CHOICES = [
@@ -15,23 +19,66 @@ class InventorySession(models.Model):
         ('supervisor_rejected', 'مرفوضة من المشرف'),
         ('admin_approved', 'معتمدة نهائياً'),
         ('cancelled', 'ملغاة'),
+        ('completed', 'منتهية'),
     ]
 
-    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name="inventory_sessions", verbose_name="موظف الجرد")
-    supervisor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviewed_sessions", verbose_name="المشرف")
+    # الموظف الذي قام بالجرد
+    employee = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="inventory_sessions",
+        verbose_name="موظف الجرد"
+    )
 
-    region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, verbose_name="المنطقة")
-    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, verbose_name="المدينة")
-    building = models.ForeignKey(Building, on_delete=models.SET_NULL, null=True, verbose_name="المبنى")
+    # المشرف المراجع
+    supervisor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="reviewed_sessions",
+        verbose_name="المشرف"
+    )
 
-    start_time = models.DateTimeField(auto_now_add=True, verbose_name="وقت بدء الجلسة")
-    end_time = models.DateTimeField(blank=True, null=True, verbose_name="وقت انتهاء الجلسة")
+    # موقع الجلسة
+    region = models.ForeignKey(
+        Region, on_delete=models.SET_NULL,
+        null=True, verbose_name="المنطقة"
+    )
+    city = models.ForeignKey(
+        City, on_delete=models.SET_NULL,
+        null=True, verbose_name="المدينة"
+    )
+    building = models.ForeignKey(
+        Building, on_delete=models.SET_NULL,
+        null=True, verbose_name="المبنى"
+    )
 
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft', verbose_name="الحالة")
+    # أوقات الجلسة
+    start_time = models.DateTimeField(
+        auto_now_add=True, verbose_name="وقت بدء الجلسة"
+    )
+    end_time = models.DateTimeField(
+        null=True, blank=True, verbose_name="وقت انتهاء الجلسة"
+    )
 
-    employee_comment = models.TextField(blank=True, null=True, verbose_name="ملاحظات الموظف")
-    supervisor_comment = models.TextField(blank=True, null=True, verbose_name="ملاحظات المشرف")
-    admin_comment = models.TextField(blank=True, null=True, verbose_name="ملاحظات مدير النظام")
+    # الحالة
+    status = models.CharField(
+        max_length=50,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name="الحالة"
+    )
+
+    # ملاحظات workflow
+    employee_comment = models.TextField(
+        blank=True, null=True, verbose_name="ملاحظات الموظف"
+    )
+    supervisor_comment = models.TextField(
+        blank=True, null=True, verbose_name="ملاحظات المشرف"
+    )
+    admin_comment = models.TextField(
+        blank=True, null=True, verbose_name="ملاحظات مدير النظام"
+    )
 
     class Meta:
         verbose_name = "جلسة جرد"
@@ -40,25 +87,63 @@ class InventorySession(models.Model):
     def __str__(self):
         return f"جلسة {self.id} - {self.employee.username}"
 
+    @property
+    def items_count(self):
+        return self.items.count()
 
+
+# ======================================
+#        تفاصيل الجرد لكل أصل
+# ======================================
 class InventoryItem(models.Model):
 
     STATUS_CHOICES = [
         ('found', 'موجود'),
         ('missing', 'مفقود'),
-        ('newly_added', 'مضاف جديد'),
+        ('new', 'أصل جديد'),
     ]
 
-    session = models.ForeignKey(InventorySession, on_delete=models.CASCADE, related_name="items", verbose_name="جلسة الجرد")
-    asset = models.ForeignKey(Asset, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="الأصل")
+    session = models.ForeignKey(
+        InventorySession,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="جلسة الجرد"
+    )
 
-    barcode = models.CharField(max_length=100, verbose_name="الباركود")
+    asset = models.ForeignKey(
+        Asset,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="الأصل"
+    )
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name="حالة الجرد")
-    scanned_at = models.DateTimeField(blank=True, null=True, verbose_name="وقت المسح")
+    barcode = models.CharField(
+        max_length=200,
+        verbose_name="الباركود"
+    )
 
-    added_manually = models.BooleanField(default=False, verbose_name="أضيف يدوياً")
-    notes = models.TextField(blank=True, null=True, verbose_name="ملاحظات")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='missing',
+        verbose_name="حالة الجرد"
+    )
+
+    scanned_at = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name="وقت المسح"
+    )
+
+    # لما يضيف أصل جديد من الشاشة
+    added_manually = models.BooleanField(
+        default=False,
+        verbose_name="أضيف يدوياً"
+    )
+
+    notes = models.TextField(
+        blank=True, null=True,
+        verbose_name="ملاحظات"
+    )
 
     class Meta:
         verbose_name = "تفصيل جرد"

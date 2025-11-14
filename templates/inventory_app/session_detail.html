@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}تفاصيل جلسة الجرد{% endblock %}
+
+{% block content %}
+
+<style>
+    .page-container {
+        max-width: 850px;
+        margin: 0 auto;
+    }
+
+    .session-box {
+        background: #fff;
+        padding: 18px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 16px;
+    }
+
+    .session-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 14px;
+    }
+
+    .info-line {
+        font-size: 14px;
+        margin: 4px 0;
+        color: #555;
+    }
+
+    .status-pill {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        color: #fff;
+        margin-top: 6px;
+    }
+
+    .st-in_progress { background:#0d6efd; }
+    .st-completed { background:#198754; }
+    .st-submitted_to_supervisor { background:#ffc107; color:#000; }
+    .st-supervisor_rejected  { background:#dc3545; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    table th {
+        background: #0d6efd;
+        color: #fff;
+        font-size: 14px;
+        padding: 10px;
+        text-align: center;
+    }
+
+    table td {
+        padding: 8px;
+        font-size: 13px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+    }
+
+    tr.found { background: #c8f7c5; }
+    tr.missing { background: #f7c5c5; }
+
+    .btn-submit {
+        background: #0d6efd;
+        color: #fff;
+        border: none;
+        padding: 12px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        margin-top: 12px;
+        width: 100%;
+    }
+</style>
+
+<div class="page-container">
+
+    <div class="session-box">
+        <div class="session-title">تفاصيل جلسة الجرد رقم {{ session.id }}</div>
+
+        <div class="info-line"><strong>الموظف:</strong> {{ session.employee.username }}</div>
+        <div class="info-line"><strong>المنطقة:</strong> {{ session.region }}</div>
+        <div class="info-line"><strong>المدينة:</strong> {{ session.city }}</div>
+        <div class="info-line"><strong>المبنى:</strong> {{ session.building }}</div>
+
+        <div class="info-line"><strong>وقت البدء:</strong> {{ session.start_time|date:"Y-m-d H:i" }}</div>
+
+        {% if session.end_time %}
+        <div class="info-line"><strong>وقت الإغلاق:</strong> {{ session.end_time|date:"Y-m-d H:i" }}</div>
+        {% endif %}
+
+        <!-- حالة الجلسة -->
+        <span class="status-pill st-{{ session.status }}">
+            {% if session.status == 'in_progress' %}
+                جاري الجرد
+            {% elif session.status == 'completed' %}
+                مكتملة
+            {% elif session.status == 'submitted_to_supervisor' %}
+                بانتظار مراجعة المشرف
+            {% elif session.status == 'supervisor_rejected' %}
+                مرفوضة من المشرف
+            {% endif %}
+        </span>
+
+        <!-- زر إرسال الجلسة للمشرف (يظهر فقط إذا انتهت الجلسة) -->
+        {% if session.status == "completed" %}
+        <button id="submitBtn" class="btn-submit">
+            📤 إرسال للمشرف
+        </button>
+        {% endif %}
+
+    </div>
+
+    <div class="session-box">
+        <h3 style="margin-top:0;">قائمة الأصول في هذه الجلسة</h3>
+
+        <table>
+            <tr>
+                <th>الباركود</th>
+                <th>الوصف</th>
+                <th>الحالة</th>
+                <th>وقت المسح</th>
+            </tr>
+
+            {% for i in items %}
+            <tr class="{% if i.status == 'found' %}found{% else %}missing{% endif %}">
+                <td>{{ i.barcode }}</td>
+                <td>{{ i.asset.description }}</td>
+                <td>
+                    {% if i.status == 'found' %}
+                        ✔ موجود
+                    {% else %}
+                        ✘ مفقود
+                    {% endif %}
+                </td>
+                <td>{{ i.scanned_at|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+<!-- سكربت إرسال الجلسة للمشرف -->
+{% if session.status == "completed" %}
+<script>
+document.getElementById("submitBtn").onclick = function () {
+
+    if (!confirm("هل تريد إرسال الجلسة للمشرف؟")) return;
+
+    fetch("{% url 'inventory_app:submit_to_supervisor' session.id %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("تم إرسال الجلسة للمشرف بنجاح!");
+            location.reload();
+        } else {
+            alert("تعذر إرسال الجلسة: " + (data.message || ""));
+        }
+    });
+}
+</script>
+{% endif %}
+
+{% endblock %}

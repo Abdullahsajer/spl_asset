@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}مراجعة جلسة الجرد{% endblock %}
+
+{% block content %}
+
+<style>
+    .page-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .session-box {
+        background: #fff;
+        padding: 18px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 16px;
+    }
+
+    .session-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 14px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    table th {
+        background: #0d6efd;
+        color: #fff;
+        font-size: 14px;
+        padding: 10px;
+        text-align: center;
+    }
+
+    table td {
+        padding: 8px;
+        font-size: 13px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+    }
+
+    tr.found { background: #c8f7c5; }
+    tr.missing { background: #f7c5c5; }
+    tr.new { background: #fff6c5; }
+
+    .btn-approve, .btn-reject {
+        width: 48%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        margin-top: 15px;
+    }
+
+    .btn-approve { background:#198754;color:#fff; }
+    .btn-reject { background:#dc3545;color:#fff; }
+</style>
+
+<div class="page-container">
+
+    <div class="session-box">
+        <div class="session-title">مراجعة جلسة الجرد رقم {{ session.id }}</div>
+
+        <p><strong>الموظف:</strong> {{ session.employee.username }}</p>
+        <p><strong>الموقع:</strong> {{ session.region }} / {{ session.city }} / {{ session.building }}</p>
+        <p><strong>وقت البدء:</strong> {{ session.start_time|date:"Y-m-d H:i" }}</p>
+
+        {% if session.end_time %}
+        <p><strong>وقت الإغلاق:</strong> {{ session.end_time|date:"Y-m-d H:i" }}</p>
+        {% endif %}
+    </div>
+
+
+    <div class="session-box">
+        <h3>قائمة الأصول</h3>
+
+        <table>
+            <tr>
+                <th>الباركود</th>
+                <th>الوصف</th>
+                <th>الحالة</th>
+                <th>وقت المسح</th>
+            </tr>
+
+            {% for i in items %}
+            <tr class="
+                {% if i.status == 'found' %}found
+                {% elif i.status == 'new' %}new
+                {% else %}missing
+                {% endif %}
+            ">
+                <td>{{ i.barcode }}</td>
+                <td>{{ i.asset.description }}</td>
+                <td>
+                    {% if i.status == 'found' %}
+                        ✔ موجود
+                    {% elif i.status == 'new' %}
+                        🟡 مضاف جديد
+                    {% else %}
+                        ✘ مفقود
+                    {% endif %}
+                </td>
+                <td>{{ i.scanned_at|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+
+    <div class="session-box">
+        <textarea id="rejectComment" placeholder="سبب الرفض (اختياري)" 
+                  style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;height:80px;"></textarea>
+
+        <div style="display:flex; justify-content:space-between;">
+            <button class="btn-approve" onclick="approveSession()">✔ موافقة</button>
+            <button class="btn-reject" onclick="rejectSession()">✘ رفض</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function approveSession() {
+    if (!confirm("هل تريد الموافقة على الجلسة؟")) return;
+
+    fetch("{% url 'inventory_app:supervisor_approve_session' session.id %}", {
+        method: "POST",
+        headers: { "X-CSRFToken": "{{ csrf_token }}", "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("تمت الموافقة بنجاح!");
+            window.location.href = "{% url 'inventory_app:supervisor_sessions_list' %}";
+        }
+    });
+}
+
+function rejectSession() {
+    let comment = document.getElementById("rejectComment").value;
+
+    if (!confirm("هل تريد رفض الجلسة؟")) return;
+
+    fetch("{% url 'inventory_app:supervisor_reject_session' session.id %}", {
+        method: "POST",
+        headers: { "X-CSRFToken": "{{ csrf_token }}", "X-Requested-With": "XMLHttpRequest" },
+        body: new URLSearchParams({ comment: comment })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("تم الرفض!");
+            window.location.href = "{% url 'inventory_app:supervisor_sessions_list' %}";
+        }
+    });
+}
+</script>
+
+{% endblock %}

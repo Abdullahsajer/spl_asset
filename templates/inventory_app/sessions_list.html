@@ -2,16 +2,108 @@
 {% block title %}جلسات الجرد{% endblock %}
 
 {% block content %}
-<h2>جلسات الجرد</h2>
 
-<ul>
-{% for s in sessions %}
-    <li>
-        <a href="{% url 'inventory_app:session_detail' s.id %}">
-            جلسة رقم {{ s.id }} — {{ s.building }}
-        </a>
-    </li>
-{% endfor %}
-</ul>
+<style>
+    .session-list-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .session-card {
+        background: #fff;
+        padding: 14px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: transform 0.15s;
+    }
+
+    .session-card:hover {
+        transform: scale(1.01);
+    }
+
+    .session-header {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .session-info {
+        font-size: 13px;
+        color: #555;
+        margin-bottom: 2px;
+    }
+
+    .status-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        color: #fff;
+        font-size: 12px;
+        margin-top: 6px;
+    }
+
+    .st-in_progress { background: #0d6efd; }   /* جاري الجرد */
+    .st-closed      { background: #198754; }   /* مكتملة */
+    .st-pending     { background: #ffc107; }   /* بانتظار المشرف */
+    .st-rejected    { background: #dc3545; }   /* مرفوضة */
+</style>
+
+
+<h2 style="text-align:center;margin-bottom:20px;">📋 جلسات الجرد</h2>
+
+<div class="session-list-container">
+
+    {% if sessions %}
+        {% for s in sessions %}
+
+            <a href="{% url 'inventory_app:session_detail' s.id %}" style="text-decoration:none; color:inherit;">
+                <div class="session-card">
+
+                    <div class="session-header">
+                        جلسة رقم {{ s.id }}
+                    </div>
+
+                    <div class="session-info">
+                        <strong>الموظف:</strong> {{ s.employee.username }}
+                    </div>
+
+                    <div class="session-info">
+                        <strong>المنطقة:</strong> {{ s.region }}
+                        — <strong>المدينة:</strong> {{ s.city }}
+                    </div>
+
+                    <div class="session-info">
+                        <strong>المبنى:</strong> {{ s.building }}
+                    </div>
+
+                    <div class="session-info">
+                        <strong>بدأت في:</strong> {{ s.start_time|date:"Y-m-d H:i" }}
+                    </div>
+
+                    {% if s.end_time %}
+                    <div class="session-info">
+                        <strong>أُغلقت في:</strong> {{ s.end_time|date:"Y-m-d H:i" }}
+                    </div>
+                    {% endif %}
+
+                    <span class="status-pill st-{{ s.status }}">
+                        {% if s.status == 'in_progress' %} جاري الجرد
+                        {% elif s.status == 'closed' %} مكتملة
+                        {% elif s.status == 'pending' %} بانتظار المشرف
+                        {% elif s.status == 'rejected' %} مرفوضة
+                        {% endif %}
+                    </span>
+
+                </div>
+            </a>
+
+        {% endfor %}
+    {% else %}
+        <p style="text-align:center;color:#666;">لا توجد جلسات مسجلة حتى الآن.</p>
+    {% endif %}
+
+</div>
 
 {% endblock %}

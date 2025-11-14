@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import Profile
 
@@ -6,14 +6,14 @@ from .models import Profile
 @login_required
 def dashboard_view(request):
     """
-    لوحة بسيطة تختلف حسب دور المستخدم:
-    - موظف جرد: توجيه لشاشة جلسات الجرد
-    - مشرف / مدير نظام: توجيه لشاشة الجلسات/التقارير
+    لوحة بسيطة لعرض دور المستخدم وبعض المعلومات.
     """
     profile = Profile.objects.filter(user=request.user).first()
-    role = getattr(profile, "role", "employee")
+    role = profile.get_role_display() if profile else "موظف"
 
     context = {
+        "user": request.user,
+        "profile": profile,
         "role": role,
     }
     return render(request, "accounts_app/dashboard.html", context)
@@ -22,11 +22,10 @@ def dashboard_view(request):
 @login_required
 def profile_view(request):
     """
-    صفحة عرض بيانات المستخدم ودوره.
+    صفحة عرض بيانات المستخدم الشخصية.
     """
     profile = Profile.objects.filter(user=request.user).first()
-    context = {
+    return render(request, "accounts_app/profile.html", {
         "user": request.user,
         "profile": profile,
-    }
-    return render(request, "accounts_app/profile.html", context)
+    })
