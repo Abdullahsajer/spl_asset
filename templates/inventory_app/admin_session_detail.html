@@ -5,15 +5,28 @@
 
 <style>
     .box {
-        background: #fff; padding: 18px; border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px;
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
     }
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
     th { background: #0d6efd; color: #fff; }
-
-    .btn-red { background:#dc3545; color:white; padding:10px; border-radius:8px; border:none; cursor:pointer; }
-    .btn-green { background:#198754; color:white; padding:10px; border-radius:8px; border:none; cursor:pointer; }
+    .btn {
+        padding: 10px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: none;
+        font-size: 14px;
+        color: white;
+        margin-left: 6px;
+    }
+    .btn-blue { background:#0d6efd; }
+    .btn-green { background:#198754; }
+    .btn-yellow { background:#ffc107; color:#000; }
+    .btn-red { background:#dc3545; }
 </style>
 
 <div class="box">
@@ -31,7 +44,7 @@
 
     <hr>
 
-    <h3>الأصول</h3>
+    <h3>الأصول الممسوحة</h3>
 
     <table>
         <tr>
@@ -53,35 +66,71 @@
 
     <hr>
 
-    <!-- زر إعادة فتح الجلسة -->
-    {% if session.status == "supervisor_approved" or session.status == "supervisor_rejected" %}
-    <button class="btn-red" id="reopenBtn">🔄 إعادة فتح الجلسة</button>
-    {% endif %}
+    <h3>📂 خيارات الجلسة</h3>
+
+    <div style="margin-top: 12px;">
+
+        <!-- PDF -->
+        <a href="{% url 'inventory_app:export_session_pdf' session.id %}" class="btn btn-blue">
+            📄 تصدير PDF
+        </a>
+
+        <!-- Excel -->
+        <a href="{% url 'inventory_app:export_session_excel' session.id %}" class="btn btn-green">
+            📊 تصدير Excel
+        </a>
+
+        <!-- Reopen -->
+        {% if session.status == "supervisor_approved" or session.status == "supervisor_rejected" %}
+        <button class="btn btn-yellow" id="reopenBtn">🔄 إعادة فتح الجلسة</button>
+        {% endif %}
+
+        <!-- Delete -->
+        <button class="btn btn-red" id="deleteBtn">🗑 حذف الجلسة</button>
+    </div>
 
 </div>
 
+
 <script>
-    {% if session.status == "supervisor_approved" or session.status == "supervisor_rejected" %}
 
-    document.getElementById("reopenBtn").onclick = function () {
-        if (!confirm("هل تريد إعادة فتح الجلسة؟")) return;
+// ====== إعادة فتح الجلسة ======
+{% if session.status == "supervisor_approved" or session.status == "supervisor_rejected" %}
+document.getElementById("reopenBtn").onclick = function() {
+    if (!confirm("هل تريد إعادة فتح الجلسة؟")) return;
 
-        fetch("{% url 'inventory_app:admin_reopen_session' session.id %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": "{{ csrf_token }}",
-            },
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === "success") {
-                alert("تمت إعادة فتح الجلسة.");
-                location.reload();
-            }
-        });
-    }
+    fetch("{% url 'inventory_app:admin_reopen_session' session.id %}", {
+        method: "POST",
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("تمت إعادة فتح الجلسة.");
+            location.reload();
+        }
+    });
+}
+{% endif %}
 
-    {% endif %}
+
+// ====== حذف الجلسة ======
+document.getElementById("deleteBtn").onclick = function() {
+    if (!confirm("⚠ هل أنت متأكد من حذف الجلسة بالكامل؟ لا يمكن التراجع.")) return;
+
+    fetch("{% url 'inventory_app:admin_delete_session' session.id %}", {
+        method: "POST",
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("تم حذف الجلسة بنجاح.");
+            window.location.href = "{% url 'inventory_app:admin_sessions_list' %}";
+        }
+    });
+}
+
 </script>
 
 {% endblock %}
