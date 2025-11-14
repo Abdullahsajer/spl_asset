@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}نظام إدارة الجرد{% endblock %}
+
+{% block content %}
+
+<style>
+.home-box {
+    max-width: 900px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.home-title {
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.home-sub {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.home-links a {
+    display: block;
+    padding: 14px;
+    background: #0d6efd;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.home-links a:hover {
+    opacity: 0.9;
+}
+</style>
+
+<div class="home-box">
+    <div class="home-title">📦 نظام إدارة الجرد - SPL</div>
+    <div class="home-sub">اختر ما تريد القيام به</div>
+
+    <div class="home-links">
+        <a href="{% url 'inventory_app:sessions_list' %}">📋 جلسات الجرد الخاصة بي</a>
+        <a href="{% url 'inventory_app:start_session' %}">➕ بدء جلسة جرد جديدة</a>
+        <a href="{% url 'inventory_app:supervisor_sessions_list' %}">🧑‍💼 جلسات المشرف</a>
+        <a href="{% url 'inventory_app:admin_dashboard' %}">🛠 لوحة تحكم المدير</a>
+    </div>
+</div>
+
+{% endblock %}

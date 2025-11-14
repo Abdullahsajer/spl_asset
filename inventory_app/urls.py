@@ -49,4 +49,19 @@ urlpatterns = [
 
     # رفض المشرف
     path("supervisor/sessions/<int:session_id>/reject/", views.supervisor_reject_session, name="supervisor_reject_session"),
+
+    # ========================
+    #  صفحات المدير Admin
+    # ========================
+    path("admin-panel/sessions/", views.admin_sessions_list, name="admin_sessions_list"),
+    path("admin-panel/sessions/<int:session_id>/", views.admin_session_detail, name="admin_session_detail"),
+    path("admin-panel/sessions/<int:session_id>/reopen/", views.admin_reopen_session, name="admin_reopen_session"),
+
+    path("admin/dashboard/", views.admin_dashboard, name="admin_dashboard"),
+
+    # === تقارير PDF/Excel ===
+    path("sessions/<int:session_id>/export/pdf/", views.export_session_pdf, name="export_session_pdf"),
+    path("sessions/<int:session_id>/export/excel/", views.export_session_excel, name="export_session_excel"),
+
+
 ]

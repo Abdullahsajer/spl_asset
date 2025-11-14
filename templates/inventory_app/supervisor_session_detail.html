@@ -1,131 +1,138 @@
-{% extends 'base.html' %}
-{% block title %}مراجعة جلسة الجرد{% endblock %}
+{% extends "base.html" %}
+{% block title %}تفاصيل جلسة الجرد - المشرف{% endblock %}
 
 {% block content %}
 
 <style>
-    .page-container {
-        max-width: 900px;
+    .container-box {
+        max-width: 1100px;
         margin: 0 auto;
-    }
-
-    .session-box {
         background: #fff;
-        padding: 18px;
-        border-radius: 12px;
+        padding: 20px;
+        border-radius: 14px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        margin-bottom: 16px;
     }
 
-    .session-title {
-        font-size: 22px;
-        font-weight: 700;
-        margin-bottom: 14px;
+    h2 {
+        margin-bottom: 10px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .info-box {
+        margin-bottom: 20px;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+    .info-line {
+        margin-bottom: 5px;
+        font-size: 14px;
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 16px;
-        background: #fff;
+        margin-top: 15px;
         border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
-    table th {
+    th {
         background: #0d6efd;
-        color: #fff;
-        font-size: 14px;
+        color: white;
         padding: 10px;
         text-align: center;
     }
 
-    table td {
+    td {
         padding: 8px;
-        font-size: 13px;
         text-align: center;
         border-bottom: 1px solid #eee;
     }
 
-    tr.found { background: #c8f7c5; }
-    tr.missing { background: #f7c5c5; }
-    tr.new { background: #fff6c5; }
+    tr.found { background: #d4f8d3; }
+    tr.missing { background: #f8d7da; }
+    tr.newly_added { background: #e8f0fe; }
 
-    .btn-approve, .btn-reject {
-        width: 48%;
-        padding: 12px;
-        border: none;
+    .btn-approve, .btn-reject, .btn-export {
+        padding: 10px 14px;
         border-radius: 8px;
+        border: none;
+        font-size: 14px;
         cursor: pointer;
-        font-size: 15px;
-        margin-top: 15px;
+        margin-top: 10px;
+        display: inline-block;
+        text-decoration: none;
+        color: white;
     }
 
-    .btn-approve { background:#198754;color:#fff; }
-    .btn-reject { background:#dc3545;color:#fff; }
+    .btn-approve { background: #198754; width: 100%; }
+    .btn-reject { background: #dc3545; width: 100%; }
+    .btn-red { background:#dc3545; }
+    .btn-green { background:#198754; }
+
+    textarea {
+        width: 100%;
+        height: 90px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        padding: 10px;
+    }
 </style>
 
-<div class="page-container">
+<div class="container-box">
 
-    <div class="session-box">
-        <div class="session-title">مراجعة جلسة الجرد رقم {{ session.id }}</div>
+    <h2>📄 تفاصيل جلسة الجرد رقم {{ session.id }}</h2>
 
-        <p><strong>الموظف:</strong> {{ session.employee.username }}</p>
-        <p><strong>الموقع:</strong> {{ session.region }} / {{ session.city }} / {{ session.building }}</p>
-        <p><strong>وقت البدء:</strong> {{ session.start_time|date:"Y-m-d H:i" }}</p>
-
-        {% if session.end_time %}
-        <p><strong>وقت الإغلاق:</strong> {{ session.end_time|date:"Y-m-d H:i" }}</p>
-        {% endif %}
+    <!-- أزرار التصديــر -->
+    <div style="margin-bottom: 15px;">
+        <a href="{% url 'inventory_app:export_session_pdf' session.id %}" class="btn-export btn-red">📄 PDF</a>
+        <a href="{% url 'inventory_app:export_session_excel' session.id %}" class="btn-export btn-green">📊 Excel</a>
     </div>
 
+    <div class="info-box">
+        <div class="info-line"><strong>الموظف:</strong> {{ session.employee.username }}</div>
+        <div class="info-line"><strong>المنطقة:</strong> {{ session.region }}</div>
+        <div class="info-line"><strong>المدينة:</strong> {{ session.city }}</div>
+        <div class="info-line"><strong>المبنى:</strong> {{ session.building }}</div>
+        <div class="info-line"><strong>وقت البدء:</strong> {{ session.start_time|date:"Y-m-d H:i" }}</div>
+        <div class="info-line"><strong>وقت النهاية:</strong> {{ session.end_time|default:"-" }}</div>
+        <div class="info-line"><strong>الحالة الحالية:</strong> {{ session.get_status_display }}</div>
+    </div>
 
-    <div class="session-box">
-        <h3>قائمة الأصول</h3>
+    <h3>قائمة الأصول</h3>
 
-        <table>
-            <tr>
-                <th>الباركود</th>
-                <th>الوصف</th>
-                <th>الحالة</th>
-                <th>وقت المسح</th>
-            </tr>
+    <table>
+        <tr>
+            <th>الباركود</th>
+            <th>الوصف</th>
+            <th>الحالة</th>
+            <th>وقت المسح</th>
+        </tr>
 
-            {% for i in items %}
-            <tr class="
-                {% if i.status == 'found' %}found
-                {% elif i.status == 'new' %}new
-                {% else %}missing
+        {% for item in items %}
+        <tr class="{{ item.status }}">
+            <td>{{ item.barcode }}</td>
+            <td>{{ item.asset.description }}</td>
+            <td>
+                {% if item.status == "found" %} ✔ موجود
+                {% elif item.status == "missing" %} ✘ مفقود
+                {% elif item.status == "newly_added" %} 🆕 جديد
                 {% endif %}
-            ">
-                <td>{{ i.barcode }}</td>
-                <td>{{ i.asset.description }}</td>
-                <td>
-                    {% if i.status == 'found' %}
-                        ✔ موجود
-                    {% elif i.status == 'new' %}
-                        🟡 مضاف جديد
-                    {% else %}
-                        ✘ مفقود
-                    {% endif %}
-                </td>
-                <td>{{ i.scanned_at|default:"-" }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+            </td>
+            <td>{{ item.scanned_at|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 
+    <label>ملاحظة عند الرفض:</label>
+    <textarea id="reject_comment"></textarea>
 
-    <div class="session-box">
-        <textarea id="rejectComment" placeholder="سبب الرفض (اختياري)" 
-                  style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;height:80px;"></textarea>
-
-        <div style="display:flex; justify-content:space-between;">
-            <button class="btn-approve" onclick="approveSession()">✔ موافقة</button>
-            <button class="btn-reject" onclick="rejectSession()">✘ رفض</button>
-        </div>
-    </div>
+    <button class="btn-approve" onclick="approveSession()">✔ قبول الجلسة</button>
+    <button class="btn-reject" onclick="rejectSession()">✘ رفض الجلسة</button>
 
 </div>
 
@@ -138,30 +145,26 @@ function approveSession() {
         headers: { "X-CSRFToken": "{{ csrf_token }}", "X-Requested-With": "XMLHttpRequest" }
     })
     .then(r => r.json())
-    .then(data => {
-        if (data.status === "success") {
-            alert("تمت الموافقة بنجاح!");
-            window.location.href = "{% url 'inventory_app:supervisor_sessions_list' %}";
-        }
+    .then(() => {
+        alert("تمت الموافقة.");
+        window.location.href = "{% url 'inventory_app:supervisor_sessions_list' %}";
     });
 }
 
 function rejectSession() {
-    let comment = document.getElementById("rejectComment").value;
-
     if (!confirm("هل تريد رفض الجلسة؟")) return;
+
+    const comment = document.getElementById("reject_comment").value;
 
     fetch("{% url 'inventory_app:supervisor_reject_session' session.id %}", {
         method: "POST",
         headers: { "X-CSRFToken": "{{ csrf_token }}", "X-Requested-With": "XMLHttpRequest" },
-        body: new URLSearchParams({ comment: comment })
+        body: new URLSearchParams({ "comment": comment })
     })
     .then(r => r.json())
-    .then(data => {
-        if (data.status === "success") {
-            alert("تم الرفض!");
-            window.location.href = "{% url 'inventory_app:supervisor_sessions_list' %}";
-        }
+    .then(() => {
+        alert("تم الرفض.");
+        window.location.href = "{% url 'inventory_app:supervisor_sessions_list' %}";
     });
 }
 </script>

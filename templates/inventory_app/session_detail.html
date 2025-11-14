@@ -71,22 +71,35 @@
     tr.found { background: #c8f7c5; }
     tr.missing { background: #f7c5c5; }
 
+    .btn-submit, .btn-export {
+        padding: 10px 14px;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 14px;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
     .btn-submit {
         background: #0d6efd;
-        color: #fff;
-        border: none;
-        padding: 12px 14px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 15px;
-        margin-top: 12px;
         width: 100%;
+        margin-top: 12px;
+        padding: 12px;
+        font-size: 15px;
+        border: none;
+        cursor: pointer;
     }
+
+    .btn-red { background:#dc3545; }
+    .btn-green { background:#198754; }
+
 </style>
 
 <div class="page-container">
 
     <div class="session-box">
+
         <div class="session-title">تفاصيل جلسة الجرد رقم {{ session.id }}</div>
 
         <div class="info-line"><strong>الموظف:</strong> {{ session.employee.username }}</div>
@@ -100,30 +113,31 @@
         <div class="info-line"><strong>وقت الإغلاق:</strong> {{ session.end_time|date:"Y-m-d H:i" }}</div>
         {% endif %}
 
-        <!-- حالة الجلسة -->
+        <!-- الحالة -->
         <span class="status-pill st-{{ session.status }}">
-            {% if session.status == 'in_progress' %}
-                جاري الجرد
-            {% elif session.status == 'completed' %}
-                مكتملة
-            {% elif session.status == 'submitted_to_supervisor' %}
-                بانتظار مراجعة المشرف
-            {% elif session.status == 'supervisor_rejected' %}
-                مرفوضة من المشرف
+            {% if session.status == 'in_progress' %} جاري الجرد
+            {% elif session.status == 'completed' %} مكتملة
+            {% elif session.status == 'submitted_to_supervisor' %} بانتظار المشرف
+            {% elif session.status == 'supervisor_rejected' %} مرفوضة
             {% endif %}
         </span>
 
-        <!-- زر إرسال الجلسة للمشرف (يظهر فقط إذا انتهت الجلسة) -->
+        <!-- أزرار التصدير -->
+        <div style="margin-top: 15px;">
+            <a href="{% url 'inventory_app:export_session_pdf' session.id %}" class="btn-export btn-red">📄 PDF</a>
+            <a href="{% url 'inventory_app:export_session_excel' session.id %}" class="btn-export btn-green">📊 Excel</a>
+        </div>
+
+        <!-- إرسال للمشرف -->
         {% if session.status == "completed" %}
-        <button id="submitBtn" class="btn-submit">
-            📤 إرسال للمشرف
-        </button>
+        <button id="submitBtn" class="btn-submit">📤 إرسال للمشرف</button>
         {% endif %}
 
     </div>
 
+    <!-- جدول الأصول -->
     <div class="session-box">
-        <h3 style="margin-top:0;">قائمة الأصول في هذه الجلسة</h3>
+        <h3 style="margin-top:0;">قائمة الأصول</h3>
 
         <table>
             <tr>
@@ -134,15 +148,11 @@
             </tr>
 
             {% for i in items %}
-            <tr class="{% if i.status == 'found' %}found{% else %}missing{% endif %}">
+            <tr class="{{ i.status }}">
                 <td>{{ i.barcode }}</td>
                 <td>{{ i.asset.description }}</td>
                 <td>
-                    {% if i.status == 'found' %}
-                        ✔ موجود
-                    {% else %}
-                        ✘ مفقود
-                    {% endif %}
+                    {% if i.status == 'found' %}✔ موجود{% else %}✘ مفقود{% endif %}
                 </td>
                 <td>{{ i.scanned_at|default:"-" }}</td>
             </tr>
@@ -152,28 +162,19 @@
 
 </div>
 
-<!-- سكربت إرسال الجلسة للمشرف -->
 {% if session.status == "completed" %}
 <script>
 document.getElementById("submitBtn").onclick = function () {
-
     if (!confirm("هل تريد إرسال الجلسة للمشرف؟")) return;
 
     fetch("{% url 'inventory_app:submit_to_supervisor' session.id %}", {
         method: "POST",
-        headers: {
-            "X-CSRFToken": "{{ csrf_token }}",
-            "X-Requested-With": "XMLHttpRequest",
-        },
+        headers: { "X-CSRFToken": "{{ csrf_token }}", "X-Requested-With": "XMLHttpRequest" },
     })
     .then(r => r.json())
     .then(data => {
-        if (data.status === "success") {
-            alert("تم إرسال الجلسة للمشرف بنجاح!");
-            location.reload();
-        } else {
-            alert("تعذر إرسال الجلسة: " + (data.message || ""));
-        }
+        alert("تم الإرسال بنجاح!");
+        location.reload();
     });
 }
 </script>

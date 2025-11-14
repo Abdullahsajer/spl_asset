@@ -1,74 +1,107 @@
-{% extends 'base.html' %}
-{% block title %}جلسات بانتظار المراجعة{% endblock %}
+{% extends "base.html" %}
+{% block title %}الجلسات بانتظار المراجعة - المشرف{% endblock %}
 
 {% block content %}
 
 <style>
     .page-container {
-        max-width: 900px;
+        max-width: 1100px;
         margin: 0 auto;
-    }
-
-    .session-box {
         background: #fff;
-        padding: 18px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        margin-bottom: 15px;
-        cursor: pointer;
-        transition: 0.2s;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
 
-    .session-box:hover {
-        transform: scale(1.01);
+    h2 {
+        margin-bottom: 20px;
+        font-size: 24px;
+        font-weight: bold;
     }
 
-    .session-title {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 6px;
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        background: #fff;
+        overflow: hidden;
+        border-radius: 10px;
     }
 
-    .info-line {
+    th {
+        background: #0d6efd;
+        color: white;
+        padding: 12px;
         font-size: 14px;
-        color: #555;
-        margin: 3px 0;
+        text-align: center;
     }
 
-    .empty-msg {
+    td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .btn-view {
+        background: #0d6efd;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+        transition: 0.3s;
+    }
+
+    .btn-view:hover {
+        background: #0b5ed7;
+    }
+
+    .empty-box {
         padding: 20px;
         text-align: center;
-        background: #fff;
-        border-radius: 12px;
         font-size: 16px;
-        color: #777;
+        color: #555;
     }
 </style>
 
 <div class="page-container">
-
-    <h2>الجلسات بانتظار مراجعة المشرف</h2>
+    <h2>📋 الجلسات التي تنتظر مراجعتك</h2>
 
     {% if sessions %}
+    <table>
+        <tr>
+            <th>رقم الجلسة</th>
+            <th>الموظف</th>
+            <th>المنطقة</th>
+            <th>المدينة</th>
+            <th>المبنى</th>
+            <th>وقت البدء</th>
+            <th>إجراء</th>
+        </tr>
+
         {% for s in sessions %}
-        <div class="session-box" onclick="location.href='{% url 'inventory_app:supervisor_session_detail' s.id %}'">
-            <div class="session-title">جلسة رقم {{ s.id }}</div>
-
-            <div class="info-line"><strong>الموظف:</strong> {{ s.employee.username }}</div>
-            <div class="info-line"><strong>الموقع:</strong> {{ s.region }} / {{ s.city }} / {{ s.building }}</div>
-            <div class="info-line"><strong>وقت الإرسال:</strong> {{ s.start_time|date:"Y-m-d H:i" }}</div>
-
-            <span style="display:inline-block;margin-top:6px;padding:5px 12px;border-radius:20px;background:#ffc107;color:#000;font-size:13px;">
-                بانتظار المراجعة
-            </span>
-        </div>
+        <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.employee.username }}</td>
+            <td>{{ s.region.name }}</td>
+            <td>{{ s.city.name }}</td>
+            <td>{{ s.building.name }}</td>
+            <td>{{ s.start_time|date:"Y-m-d H:i" }}</td>
+            <td>
+                <a href="{% url 'inventory_app:supervisor_session_detail' s.id %}" class="btn-view">
+                    👁 عرض التفاصيل
+                </a>
+            </td>
+        </tr>
         {% endfor %}
-    {% else %}
-        <div class="empty-msg">
-            لا توجد جلسات بانتظار المراجعة حالياً.
-        </div>
-    {% endif %}
+    </table>
 
+    {% else %}
+    <div class="empty-box">
+        لا توجد جلسات تنتظر المراجعة حالياً.
+    </div>
+    {% endif %}
 </div>
 
 {% endblock %}

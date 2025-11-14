@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}تفاصيل جلسة - المدير{% endblock %}
+
+{% block content %}
+
+<style>
+    .box {
+        background: #fff; padding: 18px; border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+    th { background: #0d6efd; color: #fff; }
+
+    .btn-red { background:#dc3545; color:white; padding:10px; border-radius:8px; border:none; cursor:pointer; }
+    .btn-green { background:#198754; color:white; padding:10px; border-radius:8px; border:none; cursor:pointer; }
+</style>
+
+<div class="box">
+    <h2>📄 تفاصيل الجلسة رقم {{ session.id }}</h2>
+
+    <p><strong>الموظف:</strong> {{ session.employee.username }}</p>
+    <p><strong>المنطقة:</strong> {{ session.region }}</p>
+    <p><strong>المدينة:</strong> {{ session.city }}</p>
+    <p><strong>المبنى:</strong> {{ session.building }}</p>
+    <p><strong>الحالة:</strong> {{ session.status }}</p>
+
+    {% if session.supervisor_comment %}
+    <p><strong>تعليق المشرف:</strong> {{ session.supervisor_comment }}</p>
+    {% endif %}
+
+    <hr>
+
+    <h3>الأصول</h3>
+
+    <table>
+        <tr>
+            <th>الباركود</th>
+            <th>الوصف</th>
+            <th>الحالة</th>
+            <th>وقت المسح</th>
+        </tr>
+
+        {% for i in items %}
+        <tr>
+            <td>{{ i.barcode }}</td>
+            <td>{{ i.asset.description }}</td>
+            <td>{{ i.status }}</td>
+            <td>{{ i.scanned_at|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <hr>
+
+    <!-- زر إعادة فتح الجلسة -->
+    {% if session.status == "supervisor_approved" or session.status == "supervisor_rejected" %}
+    <button class="btn-red" id="reopenBtn">🔄 إعادة فتح الجلسة</button>
+    {% endif %}
+
+</div>
+
+<script>
+    {% if session.status == "supervisor_approved" or session.status == "supervisor_rejected" %}
+
+    document.getElementById("reopenBtn").onclick = function () {
+        if (!confirm("هل تريد إعادة فتح الجلسة؟")) return;
+
+        fetch("{% url 'inventory_app:admin_reopen_session' session.id %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("تمت إعادة فتح الجلسة.");
+                location.reload();
+            }
+        });
+    }
+
+    {% endif %}
+</script>
+
+{% endblock %}

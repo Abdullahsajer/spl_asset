@@ -53,7 +53,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / "splasset" / "templates",   # ⭐ مجلد القوالب العام
+            BASE_DIR / "templates",   # ⭐ مجلد القوالب العام
         ],
         'APP_DIRS': True,
         'OPTIONS': {
