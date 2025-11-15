@@ -4,21 +4,20 @@ from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
-from django.http import JsonResponse
-from inventory_app.models import InventorySession, InventoryItem
+from django.db import models
 
 from locations_app.models import Region, City, Building
 from assets_app.models import Asset
-from .models import InventorySession, InventoryItem
+from inventory_app.models import InventorySession, InventoryItem
 
 # مكتبات التصدير
 import openpyxl
 from openpyxl.styles import Font, Alignment
 
 
-# ===========================
+# ============================================================
 # الصلاحيات
-# ===========================
+# ============================================================
 def is_employee(user):
     return user.groups.filter(name="employees").exists()
 
@@ -31,9 +30,9 @@ def is_admin(user):
     return user.is_superuser or user.groups.filter(name="admins").exists()
 
 
-# ===========================
-# جلسات الموظف
-# ===========================
+# ============================================================
+# الموظف — قائمة الجلسات
+# ============================================================
 @login_required
 def sessions_list_view(request):
     sessions = InventorySession.objects.filter(
@@ -45,14 +44,15 @@ def sessions_list_view(request):
     })
 
 
-# ===========================
+# ============================================================
 # تفاصيل الجلسة
-# ===========================
+# ============================================================
 @login_required
 def session_detail_view(request, session_id):
     session = get_object_or_404(InventorySession, id=session_id)
     items = InventoryItem.objects.filter(session=session).select_related("asset")
 
+    # صلاحيات عرض الجلسة:
     if (
         session.employee != request.user
         and not is_supervisor(request.user)
@@ -66,9 +66,9 @@ def session_detail_view(request, session_id):
     })
 
 
-# ===========================
-# بدء جلسة جرد
-# ===========================
+# ============================================================
+# بدء جلسة جرد (موظف أو مدير)
+# ============================================================
 @login_required
 def start_session_view(request):
     if not is_employee(request.user) and not is_admin(request.user):
@@ -83,6 +83,7 @@ def start_session_view(request):
         city = get_object_or_404(City, id=request.POST.get("city"))
         building = get_object_or_404(Building, id=request.POST.get("building"))
 
+        # إنشاء الجلسة
         session = InventorySession.objects.create(
             employee=request.user,
             region=region,
@@ -109,9 +110,9 @@ def start_session_view(request):
     })
 
 
-# ===========================
+# ============================================================
 # شاشة المسح
-# ===========================
+# ============================================================
 @login_required
 def live_scan_view(request, session_id):
     session = get_object_or_404(InventorySession, id=session_id)
@@ -127,9 +128,9 @@ def live_scan_view(request, session_id):
     })
 
 
-# ===========================
+# ============================================================
 # API — تسجيل مسح
-# ===========================
+# ============================================================
 @login_required
 @require_POST
 def scan_update_api(request, session_id):
@@ -152,9 +153,9 @@ def scan_update_api(request, session_id):
     return JsonResponse({"status": "success"})
 
 
-# ===========================
+# ============================================================
 # API — إضافة أصل جديد
-# ===========================
+# ============================================================
 @login_required
 @require_POST
 def add_new_asset_api(request, session_id):
@@ -169,7 +170,6 @@ def add_new_asset_api(request, session_id):
     if not barcode or not description:
         return JsonResponse({"status": "error"}, status=400)
 
-    # إنشاء أصل جديد
     asset = Asset.objects.create(
         barcode=barcode,
         description=description,
@@ -178,7 +178,6 @@ def add_new_asset_api(request, session_id):
         building=session.building,
     )
 
-    # إضافته للجلسة
     InventoryItem.objects.create(
         session=session,
         asset=asset,
@@ -190,9 +189,9 @@ def add_new_asset_api(request, session_id):
     return JsonResponse({"status": "success"})
 
 
-# ===========================
+# ============================================================
 # إنهاء الجلسة
-# ===========================
+# ============================================================
 @login_required
 def close_session(request, session_id):
     session = get_object_or_404(InventorySession, id=session_id)
@@ -208,9 +207,10 @@ def close_session(request, session_id):
 
     return JsonResponse({"status": "invalid"}, status=400)
 
-# ===========================
+
+# ============================================================
 # إرسال للمشرف
-# ===========================
+# ============================================================
 @login_required
 @require_POST
 def submit_to_supervisor(request, session_id):
@@ -225,9 +225,9 @@ def submit_to_supervisor(request, session_id):
     return JsonResponse({"status": "success"})
 
 
-# ===========================
+# ============================================================
 # المشرف — قائمة الجلسات
-# ===========================
+# ============================================================
 @login_required
 def supervisor_sessions_list(request):
     if not is_supervisor(request.user) and not is_admin(request.user):
@@ -240,9 +240,9 @@ def supervisor_sessions_list(request):
     })
 
 
-# ===========================
+# ============================================================
 # المشرف — تفاصيل الجلسة
-# ===========================
+# ============================================================
 @login_required
 def supervisor_session_detail(request, session_id):
     if not is_supervisor(request.user) and not is_admin(request.user):
@@ -257,9 +257,9 @@ def supervisor_session_detail(request, session_id):
     })
 
 
-# ===========================
+# ============================================================
 # المشرف — موافقة
-# ===========================
+# ============================================================
 @login_required
 @require_POST
 def supervisor_approve_session(request, session_id):
@@ -275,9 +275,9 @@ def supervisor_approve_session(request, session_id):
     return JsonResponse({"status": "success"})
 
 
-# ===========================
+# ============================================================
 # المشرف — رفض
-# ===========================
+# ============================================================
 @login_required
 @require_POST
 def supervisor_reject_session(request, session_id):
@@ -295,9 +295,9 @@ def supervisor_reject_session(request, session_id):
     return JsonResponse({"status": "success"})
 
 
-# ===========================
-# مدير النظام — قائمة الجلسات
-# ===========================
+# ============================================================
+# المدير — قائمة الجلسات
+# ============================================================
 @login_required
 def admin_sessions_list(request):
     if not is_admin(request.user):
@@ -310,11 +310,12 @@ def admin_sessions_list(request):
     })
 
 
-# ===========================
-# مدير النظام — تفاصيل الجلسة
-# ===========================
+# ============================================================
+# المدير — تفاصيل الجلسة
+# ============================================================
 @login_required
 def admin_session_detail(request, session_id):
+
     if not is_admin(request.user):
         return HttpResponseForbidden("غير مصرح لك")
 
@@ -327,12 +328,13 @@ def admin_session_detail(request, session_id):
     })
 
 
-# ===========================
-# مدير النظام — إعادة فتح الجلسة
-# ===========================
+# ============================================================
+# المدير — إعادة فتح الجلسة
+# ============================================================
 @login_required
 @require_POST
 def admin_reopen_session(request, session_id):
+
     if not is_admin(request.user):
         return JsonResponse({"status": "forbidden"}, status=403)
 
@@ -346,32 +348,60 @@ def admin_reopen_session(request, session_id):
 
     return JsonResponse({"status": "success"})
 
+
+# ============================================================
+# المدير — حذف الجلسة
+# ============================================================
 @login_required
+@require_POST
 def admin_delete_session(request, session_id):
 
-    if request.method != "POST":
-        return JsonResponse({"status": "error", "message": "Invalid Request"}, status=400)
-
-    # صلاحيات المدير فقط
-    user_groups = request.user.groups.values_list("name", flat=True)
-    if not (request.user.is_superuser or "admins" in user_groups):
-        return JsonResponse({"status": "error", "message": "غير مسموح"}, status=403)
+    if not is_admin(request.user):
+        return JsonResponse({"status": "forbidden"}, status=403)
 
     try:
         session = InventorySession.objects.get(id=session_id)
         session.delete()
         return JsonResponse({"status": "success"})
+
     except InventorySession.DoesNotExist:
         return JsonResponse({"status": "error", "message": "الجلسة غير موجودة"})
 
 
-# ===========================
+# ============================================================
+# تصدير PDF
+# ============================================================
+@login_required
+def export_session_pdf(request, session_id):
+
+    session = get_object_or_404(InventorySession, id=session_id)
+    items = InventoryItem.objects.filter(session=session).select_related("asset")
+
+    html = render_to_string("inventory_app/report_template.html", {
+        "session": session,
+        "items": items,
+    })
+
+    from xhtml2pdf import pisa
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = f'attachment; filename="session_{session_id}.pdf"'
+
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse("خطأ أثناء إنشاء ملف PDF", status=500)
+
+    return response
+
+
+# ============================================================
 # تصدير Excel
-# ===========================
+# ============================================================
 @login_required
 def export_session_excel(request, session_id):
+
     session = get_object_or_404(InventorySession, id=session_id)
-    items = InventoryItem.objects.filter(session=session)
+    items = InventoryItem.objects.filter(session=session).select_related("asset")
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -389,18 +419,16 @@ def export_session_excel(request, session_id):
             item.barcode,
             item.asset.description,
             item.status,
-            item.scanned_at.strftime("%Y-%m-%d %H:%M") if item.scanned_at else "-"
+            item.scanned_at.strftime("%Y-%m-%d %H:%M") if item.scanned_at else "-",
         ])
 
     response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response['Content-Disposition'] = f'attachment; filename="session_{session_id}.xlsx"'
+    response["Content-Disposition"] = f'attachment; filename="session_{session_id}.xlsx"'
 
     wb.save(response)
-
     return response
-
 
 # ===========================
 # مدير النظام — لوحة التحكم Dashboard
@@ -410,12 +438,22 @@ def admin_dashboard(request):
     if not is_admin(request.user):
         return HttpResponseForbidden("غير مصرح لك (Admin فقط)")
 
-    # إحصائيات سريعة
+    # إحصائيات عامة
     total_sessions = InventorySession.objects.count()
     completed = InventorySession.objects.filter(status="completed").count()
     submitted = InventorySession.objects.filter(status="submitted_to_supervisor").count()
     approved = InventorySession.objects.filter(status="supervisor_approved").count()
     rejected = InventorySession.objects.filter(status="supervisor_rejected").count()
+
+    # أحدث الجلسات (آخر 5)
+    latest_sessions = InventorySession.objects.select_related(
+        "employee", "region", "building"
+    ).order_by("-start_time")[:5]
+
+    # أفضل الموظفين نشاطاً
+    top_users = InventorySession.objects.values("employee__username") \
+        .annotate(count=models.Count("id")) \
+        .order_by("-count")[:5]
 
     return render(request, "inventory_app/admin_dashboard.html", {
         "total_sessions": total_sessions,
@@ -423,65 +461,24 @@ def admin_dashboard(request):
         "submitted": submitted,
         "approved": approved,
         "rejected": rejected,
+        "latest_sessions": latest_sessions,
+        "top_users": top_users,
     })
 
-
 # ===========================
-# تصدير PDF
-# ===========================
-@login_required
-def export_session_pdf(request, session_id):
-    session = get_object_or_404(InventorySession, id=session_id)
-    items = InventoryItem.objects.filter(session=session).select_related("asset")
-
-    html_string = render_to_string("inventory_app/report_template.html", {
-        "session": session,
-        "items": items,
-    })
-
-    from xhtml2pdf import pisa
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="session_{session_id}.pdf"'
-
-    pisa_status = pisa.CreatePDF(html_string, dest=response)
-
-    if pisa_status.err:
-        return HttpResponse("حدث خطأ أثناء إنشاء ملف PDF", status=500)
-
-    return response
-
-
-# ===========================
-# تصدير Excel
+# مدير النظام — حذف الجلسة
 # ===========================
 @login_required
-def export_session_excel(request, session_id):
-    session = get_object_or_404(InventorySession, id=session_id)
-    items = InventoryItem.objects.filter(session=session).select_related("asset")
+@require_POST
+def admin_delete_session(request, session_id):
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Inventory Session"
+    if not is_admin(request.user):
+        return JsonResponse({"status": "forbidden"}, status=403)
 
-    headers = ["الباركود", "الوصف", "الحالة", "وقت المسح"]
-    ws.append(headers)
+    try:
+        session = InventorySession.objects.get(id=session_id)
+        session.delete()
+        return JsonResponse({"status": "success"})
 
-    for cell in ws[1]:
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
-
-    for item in items:
-        ws.append([
-            item.barcode,
-            item.asset.description,
-            item.status,
-            item.scanned_at.strftime("%Y-%m-%d %H:%M") if item.scanned_at else "-"
-        ])
-
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = f'attachment; filename="session_{session_id}.xlsx"'
-
-    wb.save(response)
-    return response
+    except InventorySession.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "الجلسة غير موجودة"})

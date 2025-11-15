@@ -2,21 +2,220 @@
 {% block title %}لوحة التحكم - المدير{% endblock %}
 
 {% block content %}
-<div style="max-width:900px;margin:auto;padding:20px;">
+
+<style>
+
+.dashboard {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 25px 0 10px;
+    color: #333;
+}
+
+.grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 18px;
+}
+
+.card {
+    background: #fff;
+    padding: 22px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: 0.2s;
+}
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.card-icon {
+    font-size: 35px;
+    margin-bottom: 10px;
+}
+
+.card-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #0d6efd;
+}
+
+.card-label {
+    font-size: 15px;
+    color: #555;
+}
+
+.table-box {
+    background: #fff;
+    padding: 18px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+th, td {
+    padding: 10px;
+    text-align: center;
+}
+th {
+    background: #0d6efd;
+    color: #fff;
+}
+tr:nth-child(even) {
+    background: #f5f7fa;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 10px;
+    background: #0d6efd;
+    color: white;
+    text-decoration: none;
+    font-size: 17px;
+    margin-top: 15px;
+}
+
+</style>
+
+<div class="dashboard">
+
     <h2>📊 لوحة تحكم المدير</h2>
 
-    <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+    <!-- ===== البطـاقـات ===== -->
+    <div class="grid-cards">
 
-        <p><strong>إجمالي جلسات الجرد:</strong> {{ total_sessions }}</p>
-        <p><strong>جلسات مكتملة:</strong> {{ completed }}</p>
-        <p><strong>بانتظار المراجعة:</strong> {{ submitted }}</p>
-        <p><strong>مقبولة:</strong> {{ approved }}</p>
-        <p><strong>مرفوضة:</strong> {{ rejected }}</p>
+        <div class="card">
+            <div class="card-icon">📦</div>
+            <div class="card-number">{{ total_sessions }}</div>
+            <div class="card-label">إجمالي الجلسات</div>
+        </div>
 
-        <a href="{% url 'inventory_app:admin_sessions_list' %}" 
-           style="display:inline-block;margin-top:15px;padding:10px 18px;background:#0d6efd;color:#fff;border-radius:8px;text-decoration:none;">
-           إدارة الجلسات
-        </a>
+        <div class="card">
+            <div class="card-icon">✔️</div>
+            <div class="card-number">{{ completed }}</div>
+            <div class="card-label">جلسات مكتملة</div>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">⏳</div>
+            <div class="card-number">{{ submitted }}</div>
+            <div class="card-label">بانتظار المراجعة</div>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">✅</div>
+            <div class="card-number">{{ approved }}</div>
+            <div class="card-label">جلسات مقبولة</div>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">❌</div>
+            <div class="card-number">{{ rejected }}</div>
+            <div class="card-label">جلسات مرفوضة</div>
+        </div>
+
     </div>
+
+    <!-- زر الإدارة -->
+    <a href="{% url 'inventory_app:admin_sessions_list' %}" class="action-btn">
+        إدارة الجلسات
+    </a>
+
+    <hr style="margin: 30px 0;">
+
+    <!-- ===== الرسوم البيانية ===== -->
+    <h3 class="section-title">📈 توزيع حالات الجلسات</h3>
+    <canvas id="pieChart" style="max-height:300px;"></canvas>
+
+    <hr style="margin: 30px 0;">
+
+    <!-- ===== أحدث الجلسات ===== -->
+    <div class="table-box">
+        <h3 class="section-title">🕘 أحدث الجلسات</h3>
+
+        <table>
+            <tr>
+                <th>رقم الجلسة</th>
+                <th>الموظف</th>
+                <th>الحالة</th>
+                <th>المنطقة</th>
+                <th>البناية</th>
+                <th>تاريخ البدء</th>
+            </tr>
+
+            {% for s in latest_sessions %}
+            <tr>
+                <td>{{ s.id }}</td>
+                <td>{{ s.employee.username }}</td>
+                <td>{{ s.status }}</td>
+                <td>{{ s.region.name }}</td>
+                <td>{{ s.building.name }}</td>
+                <td>{{ s.start_time|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">لا توجد جلسات حتى الآن</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- ===== أفضل الموظفين ===== -->
+    <div class="table-box">
+        <h3 class="section-title">🏅 أفضل الموظفين نشاطًا</h3>
+
+        <table>
+            <tr>
+                <th>الموظف</th>
+                <th>عدد الجلسات</th>
+            </tr>
+
+            {% for u in top_users %}
+            <tr>
+                <td>{{ u.employee__username }}</td>
+                <td>{{ u.count }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">لا يوجد نشاط مسجل</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
 </div>
+
+<!-- ===== مكتبة Chart.js ===== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+var ctx = document.getElementById('pieChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: ["مكتملة", "بانتظار المراجعة", "مقبولة", "مرفوضة"],
+        datasets: [{
+            data: [
+                {{ completed }},
+                {{ submitted }},
+                {{ approved }},
+                {{ rejected }}
+            ],
+            backgroundColor: ["#198754", "#ffc107", "#0d6efd", "#dc3545"]
+        }]
+    }
+});
+</script>
+
 {% endblock %}
