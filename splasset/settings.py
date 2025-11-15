@@ -3,7 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
-# تحميل متغيرات البيئة
+# تحميل ملف .env
 load_dotenv()
 
 # ================================
@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ================================
 # مفاتيح النظام
 # ================================
-SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_ME_IN_RENDER")
+SECRET_KEY = os.getenv("SECRET_KEY", "DEVELOPMENT_ONLY_SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
@@ -24,7 +24,7 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 # التطبيقات
 # ================================
 INSTALLED_APPS = [
-    # ⭐ Django Core
+    # Django Core
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # ⭐ Project Apps
+    # Project Apps
     'accounts_app.apps.AccountsAppConfig',
     'locations_app.apps.LocationsAppConfig',
     'assets_app.apps.AssetsAppConfig',
@@ -41,17 +41,17 @@ INSTALLED_APPS = [
 ]
 
 # ================================
-# Middleware
+# Middleware + WhiteNoise
 # ================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
 
-    # ⭐ WhiteNoise لتقديم الملفات الثابتة في Render
+    # WhiteNoise
     'whitenoise.middleware.WhiteNoiseMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
 
-    # ⭐ دعم العربية
+    # Arabic Support
     'django.middleware.locale.LocaleMiddleware',
 
     'django.middleware.common.CommonMiddleware',
@@ -81,7 +81,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
 
-                # ⭐ تمرير مجموعات المستخدم للقوالب
+                # Custom context processors
                 'splasset.context_processors.user_groups',
                 'splasset.context_processors.pending_sessions',
             ],
@@ -90,18 +90,34 @@ TEMPLATES = [
 ]
 
 # ================================
-# قاعدة البيانات — Render (PostgreSQL)
+# قاعدة البيانات — dev / production
 # ================================
+
+# 🔥 توليد DATABASE_URL من القيم المفصلة إن لم يكن موجودًا
+if not os.getenv("DATABASE_URL"):
+    db_host = os.getenv("DB_HOST")
+    db_port = os.getenv("DB_PORT")
+    db_name = os.getenv("DB_NAME")
+    db_user = os.getenv("DB_USER")
+    db_pass = os.getenv("DB_PASS")
+
+    if db_host and db_name and db_user:
+        os.environ["DATABASE_URL"] = (
+            f"postgresql://{db_user}:{db_pass}"
+            f"@{db_host}:{db_port}/{db_name}"
+        )
+
+# 🔥 إذا لم تتوفر DATABASE_URL → نستخدم SQLite تلقائيًا (للتطوير)
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL"),
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
-        ssl_require=True
+        ssl_require=False if DEBUG else True
     )
 }
 
 # ================================
-# التحقق من كلمات المرور
+# Password Validators
 # ================================
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -111,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # ================================
-# اللغة والتوقيت
+# لغة وتوقيت
 # ================================
 LANGUAGE_CODE = 'ar'
 TIME_ZONE = 'Asia/Riyadh'
@@ -121,28 +137,27 @@ USE_L10N = True
 USE_TZ = True
 
 # ================================
-# Static files — WhiteNoise ready
+# Static files — WhiteNoise Ready
 # ================================
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Storage
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ================================
-# Media files
+# Media
 # ================================
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / "media"
 
 # ================================
-# Default PK
+# PK Default
 # ================================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ================================
-# Login redirects
+# Redirects
 # ================================
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
