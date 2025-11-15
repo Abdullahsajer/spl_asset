@@ -1,20 +1,30 @@
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+import dj_database_url
 
-# المسار الأساسي للمشروع
+# تحميل متغيرات البيئة
+load_dotenv()
+
+# ================================
+# المسار الأساسي
+# ================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# مفتاح التشفير (غير مناسب للإنتاج)
-SECRET_KEY = 'django-insecure-%lv-i2n6=!yge=!gt+p#b&5_r-taosrshffbee7d0c#_5h^o!7'
+# ================================
+# مفاتيح النظام
+# ================================
+SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_ME_IN_RENDER")
 
-# وضع التطوير
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-# العناوين المسموح بها
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
-# التطبيقات المثبتة
+# ================================
+# التطبيقات
+# ================================
 INSTALLED_APPS = [
-    # ⭐ تطبيقات Django الأساسية
+    # ⭐ Django Core
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -22,7 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # ⭐ تطبيقات المشروع
+    # ⭐ Project Apps
     'accounts_app.apps.AccountsAppConfig',
     'locations_app.apps.LocationsAppConfig',
     'assets_app.apps.AssetsAppConfig',
@@ -30,12 +40,18 @@ INSTALLED_APPS = [
     'reports_app.apps.ReportsAppConfig',
 ]
 
-# الوسائط الوسطية Middleware
+# ================================
+# Middleware
+# ================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+
+    # ⭐ WhiteNoise لتقديم الملفات الثابتة في Render
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
 
-    # ⭐ تفعيل دعم اللغة العربية RTL
+    # ⭐ دعم العربية
     'django.middleware.locale.LocaleMiddleware',
 
     'django.middleware.common.CommonMiddleware',
@@ -45,16 +61,19 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# روابط المشروع
+# ================================
+# URLs / WSGI
+# ================================
 ROOT_URLCONF = 'splasset.urls'
+WSGI_APPLICATION = 'splasset.wsgi.application'
 
-# القوالب Templates
+# ================================
+# Templates
+# ================================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            BASE_DIR / "templates",   # ⭐ مجلد القوالب العام
-        ],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -62,7 +81,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
 
-                # ⭐ تمرير مجموعات المستخدم لكل القوالب (employees / supervisors / ...)
+                # ⭐ تمرير مجموعات المستخدم للقوالب
                 'splasset.context_processors.user_groups',
                 'splasset.context_processors.pending_sessions',
             ],
@@ -70,18 +89,20 @@ TEMPLATES = [
     },
 ]
 
-# WSGI
-WSGI_APPLICATION = 'splasset.wsgi.application'
-
-# قاعدة البيانات — SQLite للتجربة
+# ================================
+# قاعدة البيانات — Render (PostgreSQL)
+# ================================
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
+# ================================
 # التحقق من كلمات المرور
+# ================================
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -89,7 +110,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ⭐ اللغة والزمن — الرياض
+# ================================
+# اللغة والتوقيت
+# ================================
 LANGUAGE_CODE = 'ar'
 TIME_ZONE = 'Asia/Riyadh'
 
@@ -97,20 +120,29 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# الملفات الثابتة Static Files
+# ================================
+# Static files — WhiteNoise ready
+# ================================
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# رفع الملفات Media
+# Storage
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# ================================
+# Media files
+# ================================
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# المعرّف الافتراضي
+# ================================
+# Default PK
+# ================================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# إعادة توجيه تسجيل الدخول
+# ================================
+# Login redirects
+# ================================
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
