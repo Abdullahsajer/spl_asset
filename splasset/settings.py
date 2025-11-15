@@ -64,6 +64,7 @@ TEMPLATES = [
 
                 # ⭐ تمرير مجموعات المستخدم لكل القوالب (employees / supervisors / ...)
                 'splasset.context_processors.user_groups',
+                'splasset.context_processors.pending_sessions',
             ],
         },
     },

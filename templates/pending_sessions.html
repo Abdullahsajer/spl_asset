@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}الجلسات بانتظار الموافقة{% endblock %}
+
+{% block content %}
+
+<h2 style="margin-bottom: 20px;">🔔 الجلسات بانتظار موافقة المشرف</h2>
+
+<style>
+.table-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+
+.status {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: white;
+}
+
+.review { background: #ffc107; color: black; }
+</style>
+
+<div class="table-box">
+    <table>
+        <tr>
+            <th>رقم الجلسة</th>
+            <th>اسم الموظف</th>
+            <th>المنطقة</th>
+            <th>التاريخ</th>
+            <th>الحالة</th>
+            <th>عرض</th>
+        </tr>
+
+        {% for s in sessions %}
+        <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.employee.username }}</td>
+            <td>{{ s.region.name }}</td>
+            <td>{{ s.created_at|date:"Y-m-d" }}</td>
+            <td><span class="status review">بانتظار المراجعة</span></td>
+            <td>
+                <a href="/inventory/supervisor/session/{{ s.id }}/"
+                   style="color:#0d6efd; font-weight:bold;">
+                    👁 عرض الجلسة
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" style="padding:20px; color:#888;">
+                لا توجد جلسات بانتظار الموافقة الآن
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

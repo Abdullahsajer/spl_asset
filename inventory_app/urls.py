@@ -56,6 +56,8 @@ urlpatterns = [
     path("admin-panel/sessions/", views.admin_sessions_list, name="admin_sessions_list"),
     path("admin-panel/sessions/<int:session_id>/", views.admin_session_detail, name="admin_session_detail"),
     path("admin-panel/sessions/<int:session_id>/reopen/", views.admin_reopen_session, name="admin_reopen_session"),
+    path("admin-panel/sessions/delete/<int:session_id>/", views.admin_delete_session, name="admin_delete_session"),
+
 
     path("admin/dashboard/", views.admin_dashboard, name="admin_dashboard"),
 

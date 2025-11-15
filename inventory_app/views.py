@@ -4,6 +4,8 @@ from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
+from django.http import JsonResponse
+from inventory_app.models import InventorySession, InventoryItem
 
 from locations_app.models import Region, City, Building
 from assets_app.models import Asset
@@ -192,19 +194,19 @@ def add_new_asset_api(request, session_id):
 # إنهاء الجلسة
 # ===========================
 @login_required
-@require_POST
 def close_session(request, session_id):
     session = get_object_or_404(InventorySession, id=session_id)
 
-    if session.employee != request.user and not is_admin(request.user):
-        return JsonResponse({"status": "forbidden"}, status=403)
+    if request.method == "POST":
+        session.status = "completed"
+        session.save()
 
-    session.status = "completed"
-    session.end_time = timezone.now()
-    session.save()
+        return JsonResponse({
+            "status": "success",
+            "session_id": session.id
+        })
 
-    return JsonResponse({"status": "success"})
-
+    return JsonResponse({"status": "invalid"}, status=400)
 
 # ===========================
 # إرسال للمشرف
@@ -343,6 +345,24 @@ def admin_reopen_session(request, session_id):
     session.save()
 
     return JsonResponse({"status": "success"})
+
+@login_required
+def admin_delete_session(request, session_id):
+
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Invalid Request"}, status=400)
+
+    # صلاحيات المدير فقط
+    user_groups = request.user.groups.values_list("name", flat=True)
+    if not (request.user.is_superuser or "admins" in user_groups):
+        return JsonResponse({"status": "error", "message": "غير مسموح"}, status=403)
+
+    try:
+        session = InventorySession.objects.get(id=session_id)
+        session.delete()
+        return JsonResponse({"status": "success"})
+    except InventorySession.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "الجلسة غير موجودة"})
 
 
 # ===========================

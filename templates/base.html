@@ -31,6 +31,7 @@
         .navbar-links {
             display: flex;
             gap: 15px;
+            align-items: center;
         }
 
         .navbar-links a {
@@ -40,14 +41,12 @@
             font-weight: 500;
         }
 
-        /* ====== زر البرجر ====== */
         .burger {
             display: none;
             cursor: pointer;
             font-size: 26px;
         }
 
-        /* ====== القائمة المخفية ====== */
         .mobile-menu {
             display: none;
             background: #0d6efd;
@@ -63,12 +62,8 @@
         }
 
         @media(max-width: 768px) {
-            .navbar-links {
-                display: none;
-            }
-            .burger {
-                display: block;
-            }
+            .navbar-links { display: none; }
+            .burger { display: block; }
         }
 
         .content {
@@ -83,27 +78,48 @@
 <nav class="navbar">
     <div class="brand">📦 SPL - نظام جرد الأصول</div>
 
+    <!-- 🔔 أيقونة التنبيهات -->
+    {% if user.is_superuser or "admins" in user_groups or "supervisors" in user_groups %}
+        <a href="{% url 'reports_app:pending_sessions' %}" style="color:white; font-size:22px; position:relative; margin-left:15px;">
+
+            🔔
+            {% if pending_count > 0 %}
+            <span style="
+                position:absolute;
+                top:-6px;
+                right:-10px;
+                background:red;
+                color:white;
+                padding:2px 6px;
+                border-radius:50%;
+                font-size:11px;
+            ">
+                {{ pending_count }}
+            </span>
+            {% endif %}
+        </a>
+    {% endif %}
+
     <!-- روابط سطح المكتب -->
     <div class="navbar-links">
 
-        <!-- زر الرئيسية يظهر دائمًا -->
         <a href="/">🏠 الرئيسية</a>
-        {% if user.is_superuser or "admins" in groups or "supervisors" in groups %}
+
+        {% if user.is_superuser or "admins" in user_groups or "supervisors" in user_groups %}
             <a href="/reports/">📊 التقارير</a>
         {% endif %}
 
-
         {% if user.is_authenticated %}
 
-            {% if user.is_superuser or "admins" in groups %}
+            {% if user.is_superuser or "admins" in user_groups %}
                 <a href="/inventory/admin/dashboard/">لوحة تحكم المدير</a>
             {% endif %}
 
-            {% if "supervisors" in groups %}
+            {% if "supervisors" in user_groups %}
                 <a href="/inventory/supervisor/sessions/">جلسات المراجعة</a>
             {% endif %}
 
-            {% if "employees" in groups %}
+            {% if "employees" in user_groups %}
                 <a href="/inventory/sessions/">جلسات الجرد</a>
             {% endif %}
 
@@ -124,24 +140,23 @@
 <!-- ====== قائمة الهاتف ====== -->
 <div id="mobileMenu" class="mobile-menu">
 
-    <!-- زر الرئيسية للجميع -->
     <a href="/">🏠 الرئيسية</a>
-    {% if user.is_superuser or "admins" in groups or "supervisors" in groups %}
+
+    {% if user.is_superuser or "admins" in user_groups or "supervisors" in user_groups %}
         <a href="/reports/">📊 التقارير</a>
     {% endif %}
 
-
     {% if user.is_authenticated %}
 
-        {% if user.is_superuser or "admins" in groups %}
+        {% if user.is_superuser or "admins" in user_groups %}
             <a href="/inventory/admin/dashboard/">لوحة تحكم المدير</a>
         {% endif %}
 
-        {% if "supervisors" in groups %}
+        {% if "supervisors" in user_groups %}
             <a href="/inventory/supervisor/sessions/">جلسات المراجعة</a>
         {% endif %}
 
-        {% if "employees" in groups %}
+        {% if "employees" in user_groups %}
             <a href="/inventory/sessions/">جلسات الجرد</a>
         {% endif %}
 

@@ -6,6 +6,9 @@ from django.http import JsonResponse
 from assets_app.models import Asset
 from inventory_app.models import InventorySession, InventoryItem
 from locations_app.models import Region, City, Building
+from django.http import HttpResponseForbidden
+from inventory_app.models import InventorySession
+
 
 from .utils import generate_excel
 
@@ -229,3 +232,28 @@ def get_cities_ajax(request, region_id):
 def get_buildings_ajax(request, city_id):
     buildings = Building.objects.filter(city_id=city_id).values("id", "name")
     return JsonResponse(list(buildings), safe=False)
+
+
+@login_required
+def pending_sessions(request):
+
+    # السماح فقط للمشرف والمدير
+    user_groups = request.user.groups.values_list("name", flat=True)
+
+    if not (request.user.is_superuser or "supervisors" in user_groups or "admins" in user_groups):
+        return render(request, "403.html", status=403)
+
+    # جلب الجلسات بانتظار المراجعة
+    sessions = InventorySession.objects.filter(
+        status="supervisor_under_review"
+    ).select_related("employee", "region")
+
+    return render(request, "reports_app/pending_sessions.html", {
+        "sessions": sessions
+    })
+
+
+@login_required
+def pending_sessions_view(request):
+    sessions = InventorySession.objects.filter(status="supervisor_under_review")
+    return render(request, "templates/pending_sessions.html", {"sessions": sessions})
