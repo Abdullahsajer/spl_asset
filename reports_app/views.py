@@ -1,10 +1,13 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
+from django.http import JsonResponse
+
 from assets_app.models import Asset
 from inventory_app.models import InventorySession, InventoryItem
 from locations_app.models import Region, City, Building
-from django.http import JsonResponse
+
+from .utils import generate_excel
 
 
 # ======================================================
@@ -18,55 +21,61 @@ def reports_home_view(request):
 
     scanned = InventoryItem.objects.filter(status="found").count()
     missing = InventoryItem.objects.filter(status="missing").count()
-    new = InventoryItem.objects.filter(status="new").count()
+    new_added = InventoryItem.objects.filter(status="new").count()
 
     context = {
         "total_assets": total_assets,
         "total_sessions": total_sessions,
         "total_scanned": scanned,
         "total_missing": missing,
-        "total_new": new,
+        "total_new": new_added,
     }
 
     return render(request, "reports_app/reports_home.html", context)
 
 
 # ======================================================
-#     تقرير حالة مبنى
+#     تقرير حالة المباني + فلاتر + تصدير Excel
 # ======================================================
 @login_required
 def building_status_report_view(request):
 
-    buildings = Building.objects.select_related(
-        "city", "city__region"
-    ).all()
+    regions = Region.objects.all()
+
+    selected_region = request.GET.get("region")
+    selected_city = request.GET.get("city")
+    selected_building = request.GET.get("building")
+
+    buildings = Building.objects.select_related("city", "city__region").all()
+
+    # تطبيق الفلاتر
+    if selected_region:
+        buildings = buildings.filter(city__region_id=selected_region)
+
+    if selected_city:
+        buildings = buildings.filter(city_id=selected_city)
+
+    if selected_building:
+        buildings = buildings.filter(id=selected_building)
 
     report_data = []
 
     for b in buildings:
-        # إجمالي الأصول في المبنى
         total = Asset.objects.filter(building=b).count()
 
-        # المجرود
         scanned = InventoryItem.objects.filter(
-            asset__building=b,
-            status="found"
+            asset__building=b, status="found"
         ).count()
 
-        # المفقود
         missing = InventoryItem.objects.filter(
-            asset__building=b,
-            status="missing"
+            asset__building=b, status="missing"
         ).count()
 
-        # الجديد
-        new = InventoryItem.objects.filter(
-            asset__building=b,
-            status="new"
+        new_added = InventoryItem.objects.filter(
+            asset__building=b, status="new"
         ).count()
 
-        # غير المجرودين
-        not_scanned = total - (scanned + missing + new)
+        not_scanned = total - (scanned + missing + new_added)
 
         report_data.append({
             "region": b.city.region.name,
@@ -75,24 +84,46 @@ def building_status_report_view(request):
             "total": total,
             "scanned": scanned,
             "missing": missing,
-            "new": new,
+            "new": new_added,
             "not_scanned": not_scanned,
         })
 
+    # ========== تصدير Excel ==========
+    if "export" in request.GET:
+        headers = ["المنطقة", "المدينة", "المبنى", "إجمالي", "مجرود", "غير مجرود", "نسبة الإنجاز"]
+        rows = [
+            [
+                row["region"],
+                row["city"],
+                row["building"],
+                row["total"],
+                row["scanned"],
+                row["not_scanned"],
+                round((row["scanned"] / row["total"] * 100), 1) if row["total"] else 0,
+            ]
+            for row in report_data
+        ]
+
+        return generate_excel(headers, rows, "building_status.xlsx")
+
     return render(request, "reports_app/building_status_report.html", {
-        "data": report_data
+        "data": report_data,
+        "regions": regions,
+        "cities": City.objects.all(),
+        "buildings": Building.objects.all(),
+        "selected_region": selected_region,
+        "selected_city": selected_city,
+        "selected_building": selected_building,
     })
 
 
 # ======================================================
-#     تقرير حالة الجلسات
+#     تقرير حالة الجلسات + تصدير Excel
 # ======================================================
 @login_required
 def sessions_status_report_view(request):
 
-    sessions = InventorySession.objects.select_related(
-        "employee", "region"
-    ).all()
+    sessions = InventorySession.objects.select_related("employee", "region").all()
 
     counts = {
         "total": sessions.count(),
@@ -103,6 +134,20 @@ def sessions_status_report_view(request):
         "draft": sessions.filter(status="draft").count(),
     }
 
+    # ========== تصدير Excel ==========
+    if "export" in request.GET:
+        headers = ["رقم الجلسة", "الموظف", "المنطقة", "الحالة"]
+        rows = [
+            [
+                s.id,
+                s.employee.username if s.employee else "-",
+                s.region.name if s.region else "-",
+                s.get_status_display(),
+            ]
+            for s in sessions
+        ]
+        return generate_excel(headers, rows, "sessions_status.xlsx")
+
     return render(request, "reports_app/sessions_status_report.html", {
         "counts": counts,
         "sessions": sessions,
@@ -110,7 +155,7 @@ def sessions_status_report_view(request):
 
 
 # ======================================================
-#     التقرير الختامي الشامل للأصول
+#     التقرير الختامي الشامل + تصدير Excel
 # ======================================================
 @login_required
 def summary_assets_report_view(request):
@@ -121,10 +166,8 @@ def summary_assets_report_view(request):
     missing = InventoryItem.objects.filter(status="missing").count()
     new_added = InventoryItem.objects.filter(status="new").count()
 
-    # حساب غير المجرود
     not_scanned = total_assets - (scanned + missing + new_added)
 
-    # أداء المناطق
     region_stats = Region.objects.annotate(
         assets_count=Count("cities__buildings__asset", distinct=True),
         scanned_count=Count(
@@ -144,29 +187,44 @@ def summary_assets_report_view(request):
         )
     )
 
-    context = {
+    # ========== تصدير Excel ==========
+    if "export" in request.GET:
+        headers = ["المنطقة", "إجمالي", "مجرود", "مفقود", "جديد", "غير مجرود"]
+        rows = [
+            [
+                region.name,
+                region.assets_count,
+                region.scanned_count,
+                region.missing_count,
+                region.new_count,
+                region.assets_count - region.scanned_count,
+            ]
+            for region in region_stats
+        ]
+        return generate_excel(headers, rows, "summary_assets.xlsx")
+
+    return render(request, "reports_app/summary_assets_report.html", {
         "total_assets": total_assets,
         "scanned": scanned,
         "missing": missing,
         "new_added": new_added,
         "not_scanned": not_scanned,
         "region_stats": region_stats,
-    }
-
-    return render(request, "reports_app/summary_assets_report.html", context)
+    })
 
 
-# ================================
-# AJAX – إرجاع المدن حسب المنطقة
-# ================================
+# ======================================================
+#     AJAX – إرجاع المدن حسب المنطقة
+# ======================================================
 @login_required
 def get_cities_ajax(request, region_id):
     cities = City.objects.filter(region_id=region_id).values("id", "name")
     return JsonResponse(list(cities), safe=False)
 
-# ================================
-# AJAX – إرجاع المباني حسب المدينة
-# ================================
+
+# ======================================================
+#     AJAX – إرجاع المباني حسب المدينة
+# ======================================================
 @login_required
 def get_buildings_ajax(request, city_id):
     buildings = Building.objects.filter(city_id=city_id).values("id", "name")
