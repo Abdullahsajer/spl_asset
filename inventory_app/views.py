@@ -71,6 +71,24 @@ def session_detail_view(request, session_id):
 
 
 # ============================================================
+# 🔵 API — جلب المدن حسب المنطقة
+# ============================================================
+@login_required
+def get_cities_by_region(request, region_id):
+    cities = City.objects.filter(region_id=region_id).values("id", "name")
+    return JsonResponse(list(cities), safe=False)
+
+
+# ============================================================
+# 🔵 API — جلب المباني حسب المدينة
+# ============================================================
+@login_required
+def get_buildings_by_city(request, city_id):
+    buildings = Building.objects.filter(city_id=city_id).values("id", "name")
+    return JsonResponse(list(buildings), safe=False)
+
+
+# ============================================================
 # بدء جلسة جرد (موظف أو مدير)
 # ============================================================
 @login_required
@@ -434,6 +452,7 @@ def export_session_excel(request, session_id):
     wb.save(response)
     return response
 
+
 # ===========================
 # مدير النظام — لوحة التحكم Dashboard
 # ===========================
@@ -469,6 +488,7 @@ def admin_dashboard(request):
         "top_users": top_users,
     })
 
+
 # ===========================
 # مدير النظام — حذف الجلسة
 # ===========================
@@ -488,6 +508,9 @@ def admin_delete_session(request, session_id):
         return JsonResponse({"status": "error", "message": "الجلسة غير موجودة"})
 
 
+# ============================================================
+# استيراد الأصول
+# ============================================================
 @login_required
 def admin_import_assets(request):
     if not is_admin(request.user):
@@ -604,3 +627,170 @@ def admin_import_assets(request):
         })
 
     return render(request, "inventory_app/admin_import_assets.html")
+
+
+# ============================================================
+# النسخة الاحتياطية الكاملة
+# ============================================================
+@login_required
+def backup_full_system(request):
+    if not is_admin(request.user):
+        return HttpResponseForbidden("غير مصرح لك")
+
+    wb = openpyxl.Workbook()
+
+    # ============================================================
+    # Sheet 1 — ملخص الجلسات
+    # ============================================================
+    ws1 = wb.active
+    ws1.title = "Sessions_Summary"
+
+    headers1 = [
+        "session_id", "employee",
+        "region", "city", "building",
+        "status", "start_time", "end_time",
+        "total_items", "found_items",
+        "missing_items", "new_items",
+    ]
+    ws1.append(headers1)
+
+    sessions = InventorySession.objects.select_related(
+        "employee", "region", "city", "building"
+    )
+
+    for session in sessions:
+        items = InventoryItem.objects.filter(session=session)
+
+        ws1.append([
+            session.id,
+            session.employee.username if session.employee else "",
+            session.region.name if session.region else "",
+            session.city.name if session.city else "",
+            session.building.name if session.building else "",
+            session.status,
+            session.start_time.strftime("%Y-%m-%d %H:%M") if session.start_time else "",
+            session.end_time.strftime("%Y-%m-%d %H:%M") if session.end_time else "",
+            items.count(),
+            items.filter(status="found").count(),
+            items.filter(status="missing").count(),
+            items.filter(status="new").count(),
+        ])
+
+    for cell in ws1[1]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center")
+
+    # ============================================================
+    # Sheet 2 — تفاصيل العناصر
+    # ============================================================
+    ws2 = wb.create_sheet(title="Items_Details")
+
+    headers2 = [
+        "session_id", "asset_code", "barcode",
+        "description", "status", "scanned_at",
+        "region", "city", "building",
+    ]
+    ws2.append(headers2)
+
+    items = InventoryItem.objects.select_related(
+        "session", "asset",
+        "asset__region", "asset__city", "asset__building"
+    )
+
+    for item in items:
+        ws2.append([
+            item.session.id,
+            item.asset.asset_code if item.asset else "",
+            item.barcode,
+            item.asset.description if item.asset else "",
+            item.status,
+            item.scanned_at.strftime("%Y-%m-%d %H:%M") if item.scanned_at else "",
+            item.asset.region.name if item.asset and item.asset.region else "",
+            item.asset.city.name if item.asset and item.asset.city else "",
+            item.asset.building.name if item.asset and item.asset.building else "",
+        ])
+
+    for cell in ws2[1]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center")
+
+    # ============================================================
+    # Sheet 3 — المواقع
+    # ============================================================
+    ws3 = wb.create_sheet(title="Locations")
+
+    headers3 = [
+        "type", "region", "city", "building"
+    ]
+    ws3.append(headers3)
+
+    for region in Region.objects.all():
+        ws3.append(["region", region.name, "", ""])
+
+    for city in City.objects.select_related("region"):
+        ws3.append(["city", city.region.name, city.name, ""])
+
+    for building in Building.objects.select_related("city", "city__region"):
+        ws3.append([
+            "building",
+            building.city.region.name,
+            building.city.name,
+            building.name
+        ])
+
+    for cell in ws3[1]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center")
+
+    # ============================================================
+    # Sheet 4 — جميع الأصول
+    # ============================================================
+    ws4 = wb.create_sheet(title="Assets")
+
+    headers4 = [
+        "asset_code", "barcode", "old_barcode",
+        "description", "main_category", "type",
+        "sub_category", "region", "city", "building",
+        "status", "condition",
+        "custodian_number", "custodian_name", "custodian_type",
+        "created_at", "created_by_username"
+    ]
+    ws4.append(headers4)
+
+    assets = Asset.objects.select_related("region", "city", "building")
+
+    for asset in assets:
+        ws4.append([
+            asset.asset_code,
+            asset.barcode,
+            asset.old_barcode,
+            asset.description,
+            asset.main_category,
+            asset.type,
+            asset.sub_category,
+            asset.region.name if asset.region else "",
+            asset.city.name if asset.city else "",
+            asset.building.name if asset.building else "",
+            asset.status,
+            asset.condition,
+            asset.custodian_number,
+            asset.custodian_name,
+            asset.custodian_type,
+            asset.created_at.strftime("%Y-%m-%d") if asset.created_at else "",
+            asset.created_by_username,
+        ])
+
+    for cell in ws4[1]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center")
+
+    # ============================================================
+    # تحميل الملف النهائي
+    # ============================================================
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="full_inventory_backup.xlsx"'
+
+    wb.save(response)
+    return response

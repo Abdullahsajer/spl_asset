@@ -35,20 +35,21 @@ urlpatterns = [
 
 
     # ========================
+    #  API — المدن والمباني
+    # ========================
+    path("api/get-cities/<int:region_id>/", views.get_cities_by_region, name="get_cities_by_region"),
+    path("api/get-buildings/<int:city_id>/", views.get_buildings_by_city, name="get_buildings_by_city"),
+
+
+    # ========================
     #  مشرف Supervisor
     # ========================
 
-    # قائمة الجلسات التي تنتظر المراجعة
     path("supervisor/sessions/", views.supervisor_sessions_list, name="supervisor_sessions_list"),
-
-    # تفاصيل جلسة للمشرف
     path("supervisor/sessions/<int:session_id>/", views.supervisor_session_detail, name="supervisor_session_detail"),
-
-    # موافقة المشرف
     path("supervisor/sessions/<int:session_id>/approve/", views.supervisor_approve_session, name="supervisor_approve_session"),
-
-    # رفض المشرف
     path("supervisor/sessions/<int:session_id>/reject/", views.supervisor_reject_session, name="supervisor_reject_session"),
+
 
     # ========================
     #  صفحات المدير Admin
@@ -57,15 +58,22 @@ urlpatterns = [
     path("admin-panel/sessions/<int:session_id>/", views.admin_session_detail, name="admin_session_detail"),
     path("admin-panel/sessions/<int:session_id>/reopen/", views.admin_reopen_session, name="admin_reopen_session"),
     path("admin-panel/sessions/delete/<int:session_id>/", views.admin_delete_session, name="admin_delete_session"),
-    # استيراد الأصول (Excel)
+
+    # استيراد الأصول
     path("admin/import-assets/", views.admin_import_assets, name="admin_import_assets"),
 
+    # النسخة الاحتياطية
+    path("admin/backup-full/", views.backup_full_system, name="backup_full_system"),
 
+    # لوحة التحكم
     path("admin/dashboard/", views.admin_dashboard, name="admin_dashboard"),
 
-    # === تقارير PDF/Excel ===
+    # تقارير PDF/Excel
     path("sessions/<int:session_id>/export/pdf/", views.export_session_pdf, name="export_session_pdf"),
     path("sessions/<int:session_id>/export/excel/", views.export_session_excel, name="export_session_excel"),
 
+    # روابط Ajax للمدن والمباني
+    path("ajax/cities/<int:region_id>/", views.get_cities_by_region, name="get_cities_by_region"),
+    path("ajax/buildings/<int:city_id>/", views.get_buildings_by_city, name="get_buildings_by_city"),
 
 ]

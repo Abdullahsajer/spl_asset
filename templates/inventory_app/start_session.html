@@ -12,9 +12,7 @@
         padding: 0;
     }
 
-    .container {
-        padding: 20px;
-    }
+    .container { padding: 20px; }
 
     .box {
         background: #fff;
@@ -32,14 +30,9 @@
         border-radius: 8px;
         margin-bottom: 15px;
         text-align: center;
-        font-size: 15px;
     }
 
-    label {
-        font-size: 15px;
-        margin-bottom: 6px;
-        display: block;
-    }
+    label { display: block; margin-bottom: 6px; font-size: 15px; }
 
     select {
         width: 100%;
@@ -60,51 +53,90 @@
         font-size: 17px;
         cursor: pointer;
     }
-
-    .btn:hover {
-        background: #0a58ca;
-    }
+    .btn:hover { background: #0a58ca; }
 </style>
 
 <div class="container">
     <div class="box">
 
         {% if error %}
-        <div class="error-box">
-            {{ error }}
-        </div>
+        <div class="error-box">{{ error }}</div>
         {% endif %}
 
         <form method="POST">
             {% csrf_token %}
 
+            <!-- المنطقة -->
             <label>اختر المنطقة:</label>
-            <select name="region">
+            <select name="region" id="region-select">
                 <option value="">اختر المنطقة</option>
                 {% for r in regions %}
                 <option value="{{ r.id }}">{{ r.name }}</option>
                 {% endfor %}
             </select>
 
+            <!-- المدينة -->
             <label>اختر المدينة:</label>
-            <select name="city">
+            <select name="city" id="city-select">
                 <option value="">اختر المدينة</option>
-                {% for c in cities %}
-                <option value="{{ c.id }}">{{ c.name }}</option>
-                {% endfor %}
             </select>
 
+            <!-- المبنى -->
             <label>اختر المبنى:</label>
-            <select name="building">
+            <select name="building" id="building-select">
                 <option value="">اختر المبنى</option>
-                {% for b in buildings %}
-                <option value="{{ b.id }}">{{ b.name }}</option>
-                {% endfor %}
             </select>
 
             <button class="btn">بدء جلسة الجرد</button>
         </form>
     </div>
 </div>
+
+<script>
+// عند اختيار المنطقة — اجلب المدن
+document.getElementById("region-select").addEventListener("change", function () {
+    let regionId = this.value;
+
+    document.getElementById("city-select").innerHTML = '<option value="">اختر المدينة</option>';
+    document.getElementById("building-select").innerHTML = '<option value="">اختر المبنى</option>';
+
+    if (!regionId) return;
+
+    fetch(`/inventory/ajax/cities/${regionId}/`)
+        .then(response => response.json())
+        .then(data => {
+            let citySelect = document.getElementById("city-select");
+
+            data.forEach(city => {
+                let opt = document.createElement("option");
+                opt.value = city.id;
+                opt.textContent = city.name;
+                citySelect.appendChild(opt);
+            });
+        });
+});
+
+// عند اختيار المدينة — اجلب المباني
+document.getElementById("city-select").addEventListener("change", function () {
+    let cityId = this.value;
+
+    document.getElementById("building-select").innerHTML = '<option value="">اختر المبنى</option>';
+
+    if (!cityId) return;
+
+    fetch(`/inventory/ajax/buildings/${cityId}/`)
+        .then(response => response.json())
+        .then(data => {
+            let buildingSelect = document.getElementById("building-select");
+
+            data.forEach(b => {
+                let opt = document.createElement("option");
+                opt.value = b.id;
+                opt.textContent = b.name;
+                buildingSelect.appendChild(opt);
+            });
+        });
+});
+</script>
 
 {% endblock %}
