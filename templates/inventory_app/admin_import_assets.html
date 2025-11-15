@@ -3,7 +3,32 @@
 
 {% block content %}
 
-<div style="max-width:600px;margin:auto;background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+<style>
+  .import-container {
+    max-width: 600px;
+    margin: auto;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .import-container h2 {
+    margin-bottom: 10px;
+  }
+
+  .form-label {
+    font-weight: bold;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .form-control {
+    margin-bottom: 12px;
+  }
+</style>
+
+<div class="import-container">
 
     <h2>📥 استيراد الأصول من Excel</h2>
     <p>قم برفع ملف Excel يحتوي على بيانات الأصول بالصيغة الصحيحة.</p>
@@ -11,10 +36,20 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <label>اختر ملف Excel:</label>
-        <input type="file" name="excel_file" required class="form-control" accept=".xlsx,.xls">
+        <label for="excel_file" class="form-label">اختر ملف Excel:</label>
+        <input 
+            type="file" 
+            id="excel_file"
+            name="excel_file" 
+            required 
+            class="form-control"
+            accept=".xlsx,.xls"
+            placeholder="قم باختيار ملف من نوع Excel"
+        >
 
-        <button class="btn btn-primary mt-3">رفع واستيراد</button>
+        <button type="submit" class="btn btn-primary mt-3">
+            رفع واستيراد
+        </button>
     </form>
 </div>
 

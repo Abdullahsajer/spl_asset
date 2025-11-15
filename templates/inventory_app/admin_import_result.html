@@ -3,7 +3,27 @@
 
 {% block content %}
 
-<div style="max-width:700px;margin:auto;background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+<style>
+
+.result-box {
+    max-width: 700px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.error-list {
+    color: red;
+    margin-top: 10px;
+    list-style-type: disc;
+    padding-right: 20px;
+}
+
+</style>
+
+<div class="result-box">
 
     <h2>📊 نتيجة استيراد الملف</h2>
 
@@ -12,11 +32,11 @@
 
     {% if errors %}
     <h4>الأخطاء:</h4>
-    <ul>
-        {% for err in errors %}
-        <li style="color: red">{{ err }}</li>
-        {% endfor %}
+
+    <ul class="error-list">{% for err in errors %}
+        <li>{{ err }}</li>{% endfor %}
     </ul>
+
     {% endif %}
 
     <a href="{% url 'inventory_app:admin_import_assets' %}" class="btn btn-secondary mt-3">

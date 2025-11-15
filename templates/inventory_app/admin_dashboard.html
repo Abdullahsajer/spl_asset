@@ -71,6 +71,15 @@
     background: #146c43 !important;
 }
 
+/* === استبدال inline styles === */
+.hr-space {
+    margin: 30px 0;
+}
+
+.chart-canvas {
+    max-height: 300px;
+}
+
 </style>
 
 <div class="dashboard">
@@ -137,20 +146,22 @@
         🏢 استيراد المباني
     </a>
     
-    <!-- زر النسخه الاحتياطية -->
+    <!-- زر النسخة الاحتياطية -->
     <a href="{% url 'inventory_app:backup_full_system' %}" class="action-btn import-btn">
         🧩 نسخة احتياطية كاملة للنظام
     </a>
 
-    <hr style="margin: 30px 0;">
+    <!-- ❌ inline style → ✔ class -->
+    <hr class="hr-space">
 
-
-    <!-- باقي الصفحة كما هي -->
     <!-- ===== الرسوم البيانية ===== -->
     <h3 class="section-title">📈 توزيع حالات الجلسات</h3>
-    <canvas id="pieChart" style="max-height:300px;"></canvas>
 
-    <hr style="margin: 30px 0;">
+    <!-- ❌ inline style → ✔ class -->
+    <canvas id="pieChart" class="chart-canvas"></canvas>
+
+    <!-- ❌ inline style → ✔ class -->
+    <hr class="hr-space">
 
     <div class="table-box">
         <h3 class="section-title">🕘 أحدث الجلسات</h3>
