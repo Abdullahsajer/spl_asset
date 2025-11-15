@@ -61,6 +61,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                # ⭐ تمرير مجموعات المستخدم لكل القوالب (employees / supervisors / ...)
+                'splasset.context_processors.user_groups',
             ],
         },
     },
@@ -109,4 +112,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # إعادة توجيه تسجيل الدخول
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/accounts/login/'   
+LOGOUT_REDIRECT_URL = '/accounts/login/'

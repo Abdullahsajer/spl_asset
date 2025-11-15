@@ -40,18 +40,42 @@
 .home-links a:hover {
     opacity: 0.9;
 }
+
+.note {
+    margin-top: 20px;
+    color: #777;
+    font-size: 14px;
+}
 </style>
 
 <div class="home-box">
-    <div class="home-title">📦 نظام إدارة الجرد - SPL</div>
-    <div class="home-sub">اختر ما تريد القيام به</div>
 
+    <div class="home-title">📦 نظام إدارة الجرد - SPL</div>
+    <div class="home-sub">مرحبًا بك في النظام</div>
+
+    {% if user.is_authenticated %}
     <div class="home-links">
-        <a href="{% url 'inventory_app:sessions_list' %}">📋 جلسات الجرد الخاصة بي</a>
-        <a href="{% url 'inventory_app:start_session' %}">➕ بدء جلسة جرد جديدة</a>
-        <a href="{% url 'inventory_app:supervisor_sessions_list' %}">🧑‍💼 جلسات المشرف</a>
-        <a href="{% url 'inventory_app:admin_dashboard' %}">🛠 لوحة تحكم المدير</a>
+
+        {% if "admins" in groups or user.is_superuser %}
+            <a href="/inventory/admin/dashboard/">🛠 لوحة تحكم المدير</a>
+        {% endif %}
+
+        {% if "supervisors" in groups %}
+            <a href="/inventory/supervisor/sessions/">🧑‍💼 جلسات المشرف</a>
+        {% endif %}
+
+        {% if "employees" in groups %}
+            <a href="/inventory/sessions/">📋 جلسات الجرد الخاصة بي</a>
+            <a href="/inventory/sessions/start/">➕ بدء جلسة جرد جديدة</a>
+        {% endif %}
+
     </div>
+
+    {% else %}
+        <p class="note">الرجاء تسجيل الدخول للوصول إلى النظام.</p>
+        <a class="home-links" href="/accounts/login/">دخول</a>
+    {% endif %}
+
 </div>
 
 {% endblock %}
