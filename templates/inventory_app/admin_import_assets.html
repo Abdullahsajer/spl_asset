@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}استيراد الأصول{% endblock %}
+
+{% block content %}
+
+<div style="max-width:600px;margin:auto;background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+
+    <h2>📥 استيراد الأصول من Excel</h2>
+    <p>قم برفع ملف Excel يحتوي على بيانات الأصول بالصيغة الصحيحة.</p>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <label>اختر ملف Excel:</label>
+        <input type="file" name="excel_file" required class="form-control" accept=".xlsx,.xls">
+
+        <button class="btn btn-primary mt-3">رفع واستيراد</button>
+    </form>
+</div>
+
+{% endblock %}

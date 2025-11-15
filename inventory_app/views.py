@@ -5,6 +5,10 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 from django.db import models
+import openpyxl
+from django.contrib import messages
+from django.shortcuts import render
+from django.db import transaction
 
 from locations_app.models import Region, City, Building
 from assets_app.models import Asset
@@ -482,3 +486,121 @@ def admin_delete_session(request, session_id):
 
     except InventorySession.DoesNotExist:
         return JsonResponse({"status": "error", "message": "الجلسة غير موجودة"})
+
+
+@login_required
+def admin_import_assets(request):
+    if not is_admin(request.user):
+        return HttpResponseForbidden("غير مسموح لك")
+
+    if request.method == "POST" and request.FILES.get("excel_file"):
+
+        file = request.FILES["excel_file"]
+
+        try:
+            wb = openpyxl.load_workbook(file, data_only=True)
+            ws = wb.active
+        except:
+            messages.error(request, "❌ خطأ: الملف غير صالح، تأكد أنه Excel بصيغة .xlsx")
+            return redirect("inventory_app:admin_import_assets")
+
+        # قراءة أسماء الأعمدة من الصف الأول
+        headers = [str(c.value).strip() if c.value else "" for c in ws[1]]
+
+        # تحويلها لتعامل باسم العمود
+        col = {name: index for index, name in enumerate(headers)}
+
+        # التحقق أن كل الأعمدة المطلوبة موجودة
+        required_cols = [
+            "asset_code", "barcode", "old_barcode", "description",
+            "main_category", "type", "sub_category",
+            "region_name", "city_name", "building_name",
+            "status", "condition",
+            "custodian_number", "custodian_name", "custodian_type",
+            "created_at", "created_by_username",
+        ]
+
+        missing = [c for c in required_cols if c not in col]
+        if missing:
+            messages.error(request, f"❌ الأعمدة المفقودة: {', '.join(missing)}")
+            return redirect("inventory_app:admin_import_assets")
+
+        added = 0
+        skipped = 0
+        errors = []
+
+        with transaction.atomic():
+            for row_number, row in enumerate(ws.iter_rows(min_row=2), start=2):
+
+                try:
+                    # استخراج البيانات باستخدام اسم كل عمود (وليس ترتيب الأعمدة)
+                    get = lambda field: row[col[field]].value if col[field] < len(row) else None
+
+                    asset_code       = get("asset_code")
+                    barcode          = get("barcode")
+                    old_barcode      = get("old_barcode")
+                    description      = get("description")
+                    main_category    = get("main_category")
+                    type_            = get("type")
+                    sub_category     = get("sub_category")
+                    region_name      = get("region_name")
+                    city_name        = get("city_name")
+                    building_name    = get("building_name")
+                    status           = get("status")
+                    condition        = get("condition")
+                    custodian_number = get("custodian_number")
+                    custodian_name   = get("custodian_name")
+                    custodian_type   = get("custodian_type")
+                    created_at       = get("created_at")
+                    created_by_username = get("created_by_username")
+
+                    # تجاهل الصف إذا asset_code أو barcode غير موجود
+                    if not asset_code or not barcode:
+                        skipped += 1
+                        errors.append(f"سطر {row_number}: asset_code أو barcode فارغ")
+                        continue
+
+                    # جلب الموقع
+                    region = Region.objects.filter(name=str(region_name).strip()).first()
+                    city = City.objects.filter(name=str(city_name).strip()).first()
+                    building = Building.objects.filter(name=str(building_name).strip()).first()
+
+                    if not region or not city or not building:
+                        skipped += 1
+                        errors.append(f"سطر {row_number}: بيانات الموقع غير صحيحة")
+                        continue
+
+                    # إنشاء الأصل
+                    Asset.objects.create(
+                        asset_code=asset_code,
+                        barcode=barcode,
+                        old_barcode=old_barcode,
+                        description=description,
+                        main_category=main_category,
+                        type=type_,
+                        sub_category=sub_category,
+                        region=region,
+                        city=city,
+                        building=building,
+                        status=status,
+                        condition=condition,
+                        custodian_number=custodian_number,
+                        custodian_name=custodian_name,
+                        custodian_type=custodian_type,
+                        created_at=created_at,
+                        created_by_username=created_by_username,
+                    )
+
+                    added += 1
+
+                except Exception as e:
+                    skipped += 1
+                    errors.append(f"سطر {row_number}: {str(e)}")
+
+        return render(request, "inventory_app/admin_import_result.html", {
+            "added": added,
+            "skipped": skipped,
+            "errors": errors,
+        })
+
+    return render(request, "inventory_app/admin_import_assets.html")

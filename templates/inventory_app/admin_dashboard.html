@@ -51,31 +51,6 @@
     color: #555;
 }
 
-.table-box {
-    background: #fff;
-    padding: 18px;
-    border-radius: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    margin-top: 20px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-th, td {
-    padding: 10px;
-    text-align: center;
-}
-th {
-    background: #0d6efd;
-    color: #fff;
-}
-tr:nth-child(even) {
-    background: #f5f7fa;
-}
-
 .action-btn {
     display: inline-block;
     padding: 12px 22px;
@@ -85,6 +60,15 @@ tr:nth-child(even) {
     text-decoration: none;
     font-size: 17px;
     margin-top: 15px;
+    margin-right: 10px;
+}
+
+/* زر استيراد */
+.import-btn {
+    background: #198754 !important;
+}
+.import-btn:hover {
+    background: #146c43 !important;
 }
 
 </style>
@@ -93,7 +77,7 @@ tr:nth-child(even) {
 
     <h2>📊 لوحة تحكم المدير</h2>
 
-    <!-- ===== البطـاقـات ===== -->
+    <!-- ===== البطاقات ===== -->
     <div class="grid-cards">
 
         <div class="card">
@@ -128,20 +112,41 @@ tr:nth-child(even) {
 
     </div>
 
-    <!-- زر الإدارة -->
+    <!-- ===== أزرار الإدارة ===== -->
     <a href="{% url 'inventory_app:admin_sessions_list' %}" class="action-btn">
-        إدارة الجلسات
+        🗂️ إدارة الجلسات
+    </a>
+
+    <!-- زر استيراد الأصول -->
+    <a href="{% url 'inventory_app:admin_import_assets' %}" class="action-btn import-btn">
+        📥 استيراد الأصول
+    </a>
+
+    <!-- زر استيراد المناطق -->
+    <a href="{% url 'locations_app:admin_import_regions' %}" class="action-btn import-btn">
+        🌍 استيراد المناطق
+    </a>
+
+    <!-- زر استيراد المدن -->
+    <a href="{% url 'locations_app:admin_import_cities' %}" class="action-btn import-btn">
+        🏙️ استيراد المدن
+    </a>
+
+    <!-- زر استيراد المباني -->
+    <a href="{% url 'locations_app:admin_import_buildings' %}" class="action-btn import-btn">
+        🏢 استيراد المباني
     </a>
 
     <hr style="margin: 30px 0;">
 
+
+    <!-- باقي الصفحة كما هي -->
     <!-- ===== الرسوم البيانية ===== -->
     <h3 class="section-title">📈 توزيع حالات الجلسات</h3>
     <canvas id="pieChart" style="max-height:300px;"></canvas>
 
     <hr style="margin: 30px 0;">
 
-    <!-- ===== أحدث الجلسات ===== -->
     <div class="table-box">
         <h3 class="section-title">🕘 أحدث الجلسات</h3>
 
@@ -170,7 +175,6 @@ tr:nth-child(even) {
         </table>
     </div>
 
-    <!-- ===== أفضل الموظفين ===== -->
     <div class="table-box">
         <h3 class="section-title">🏅 أفضل الموظفين نشاطًا</h3>
 
@@ -195,7 +199,7 @@ tr:nth-child(even) {
 
 </div>
 
-<!-- ===== مكتبة Chart.js ===== -->
+<!-- ===== Chart.js ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>

@@ -57,6 +57,8 @@ urlpatterns = [
     path("admin-panel/sessions/<int:session_id>/", views.admin_session_detail, name="admin_session_detail"),
     path("admin-panel/sessions/<int:session_id>/reopen/", views.admin_reopen_session, name="admin_reopen_session"),
     path("admin-panel/sessions/delete/<int:session_id>/", views.admin_delete_session, name="admin_delete_session"),
+    # استيراد الأصول (Excel)
+    path("admin/import-assets/", views.admin_import_assets, name="admin_import_assets"),
 
 
     path("admin/dashboard/", views.admin_dashboard, name="admin_dashboard"),
