@@ -88,6 +88,10 @@
 
         <!-- زر الرئيسية يظهر دائمًا -->
         <a href="/">🏠 الرئيسية</a>
+        {% if user.is_superuser or "admins" in groups or "supervisors" in groups %}
+            <a href="/reports/">📊 التقارير</a>
+        {% endif %}
+
 
         {% if user.is_authenticated %}
 
@@ -122,6 +126,10 @@
 
     <!-- زر الرئيسية للجميع -->
     <a href="/">🏠 الرئيسية</a>
+    {% if user.is_superuser or "admins" in groups or "supervisors" in groups %}
+        <a href="/reports/">📊 التقارير</a>
+    {% endif %}
+
 
     {% if user.is_authenticated %}
 

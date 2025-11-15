@@ -1,19 +1,192 @@
 {% extends 'base.html' %}
-{% block title %}تقرير حالة مبنى{% endblock %}
+{% load report_filters %}
+
+{% block title %}تقرير حالة المباني{% endblock %}
 
 {% block content %}
 
-<h2>تقرير حالة مبنى</h2>
+<h2 style="margin-bottom: 15px;">🏢 تقرير حالة المباني</h2>
 
-<div class="report-box">
-    <p>هذه الصفحة ستعرض:</p>
-    <ul>
-        <li>عدد الأصول المجرودة</li>
-        <li>عدد الأصول المضافة</li>
-        <li>عدد الأصول المفقودة</li>
-    </ul>
+<style>
+    .filter-box {
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
 
-    <p>لاحقاً سيتم إضافة نموذج اختيار (منطقة - مدينة - مبنى) هنا.</p>
+    .filter-box label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: bold;
+    }
+
+    .filter-box select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-bottom: 12px;
+        font-size: 15px;
+    }
+
+    .btn-filter {
+        width: 100%;
+        padding: 10px;
+        background: #0d6efd;
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .btn-filter:hover {
+        background: #0a58ca;
+    }
+
+    .report-table {
+        width: 100%;
+        background: #fff;
+        border-radius: 12px;
+        padding: 0;
+        margin-top: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border-collapse: collapse;
+    }
+
+    .report-table th {
+        background: #0d6efd;
+        color: white;
+        padding: 12px;
+        text-align: center;
+        font-size: 15px;
+    }
+
+    .report-table td {
+        padding: 10px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+    }
+
+    .percent {
+        font-weight: bold;
+        color: #0d6efd;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 20px;
+        font-size: 16px;
+        background: #fff;
+        border-radius: 12px;
+        margin-top: 20px;
+    }
+</style>
+
+<!-- ============ فلاتر التقرير ============ -->
+<div class="filter-box">
+    <form method="GET">
+        <label>المنطقة:</label>
+        <select name="region" id="regionSelect" onchange="loadCities(this.value)">
+            <option value="">اختر المنطقة</option>
+            {% for r in regions %}
+                <option value="{{ r.id }}"
+                    {% if r.id|stringformat:'s' == selected_region %}selected{% endif %}>
+                    {{ r.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>المدينة:</label>
+        <select name="city" id="citySelect" onchange="loadBuildings(this.value)">
+            <option value="">اختر المدينة</option>
+            {% for c in cities %}
+                <option value="{{ c.id }}"
+                    {% if c.id|stringformat:'s' == selected_city %}selected{% endif %}>
+                    {{ c.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>المبنى:</label>
+        <select name="building" id="buildingSelect">
+            <option value="">اختر المبنى</option>
+            {% for b in buildings %}
+                <option value="{{ b.id }}"
+                    {% if b.id|stringformat:'s' == selected_building %}selected{% endif %}>
+                    {{ b.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button class="btn-filter">🔎 عرض التقرير</button>
+    </form>
 </div>
+
+<!-- ============ جدول التقرير ============ -->
+{% if data %}
+<table class="report-table">
+    <tr>
+        <th>المنطقة</th>
+        <th>المدينة</th>
+        <th>المبنى</th>
+        <th>إجمالي الأصول</th>
+        <th>مجرود</th>
+        <th>غير مجرود</th>
+        <th>نسبة الإنجاز</th>
+    </tr>
+
+    {% for row in data %}
+    {% with percent=row.scanned|percentage:row.total %}
+    <tr>
+        <td>{{ row.region }}</td>
+        <td>{{ row.city }}</td>
+        <td>{{ row.building }}</td>
+        <td>{{ row.total }}</td>
+        <td>{{ row.scanned }}</td>
+        <td>{{ row.not_scanned }}</td>
+        <td class="percent">{{ percent }}%</td>
+    </tr>
+    {% endwith %}
+    {% endfor %}
+</table>
+{% else %}
+<div class="no-data">لا توجد نتائج مطابقة لفلاتر البحث</div>
+{% endif %}
+
+<!-- ============ سكربت AJAX ============ -->
+<script>
+function loadCities(regionId) {
+    fetch(`/reports/ajax/get-cities/${regionId}/`)
+        .then(res => res.json())
+        .then(data => {
+            let citySelect = document.getElementById("citySelect");
+            citySelect.innerHTML = `<option value="">اختر المدينة</option>`;
+
+            data.forEach(c => {
+                citySelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+
+            document.getElementById("buildingSelect").innerHTML =
+                `<option value="">اختر المبنى</option>`;
+        });
+}
+
+function loadBuildings(cityId) {
+    fetch(`/reports/ajax/get-buildings/${cityId}/`)
+        .then(res => res.json())
+        .then(data => {
+            let buildingSelect = document.getElementById("buildingSelect");
+            buildingSelect.innerHTML = `<option value="">اختر المبنى</option>`;
+
+            data.forEach(b => {
+                buildingSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+            });
+        });
+}
+</script>
 
 {% endblock %}
