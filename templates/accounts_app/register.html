@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}إنشاء حساب{% endblock %}
+
+{% block content %}
+<h2>إنشاء حساب جديد</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <label>اسم المستخدم:</label>
+    <input type="text" name="username" required>
+
+    <label>كلمة المرور:</label>
+    <input type="password" name="password1" required>
+
+    <label>تأكيد كلمة المرور:</label>
+    <input type="password" name="password2" required>
+
+    <button type="submit">تسجيل</button>
+</form>
+
+{% endblock %}
