@@ -152,7 +152,7 @@ def import_step4_apply(request):
             messages.error(request, f"❌ الحقل '{db_field}' غير موجود داخل الموديل {model_name}.")
             return redirect("import_app:step3")
 
-        # معالجة العلاقات FK
+        # في حالة Foreign Key
         if field.is_relation and field.many_to_one:
             rel_model = field.related_model
             relation_cache[db_field] = {
@@ -164,10 +164,9 @@ def import_step4_apply(request):
     batch = []
     batch_size = 2000
 
-    for row_idx, row in df.iterrows():
+    for _, row in df.iterrows():
 
         obj_data = {}
-        skip_row = False
 
         for excel_col, db_field in mappings.items():
 
@@ -175,57 +174,34 @@ def import_step4_apply(request):
             try:
                 field = model._meta.get_field(db_field)
             except:
-                errors.append(f"سطر {row_idx+2}: ❌ الحقل '{db_field}' غير موجود.")
-                skip_row = True
+                errors.append(f"❌ الحقل '{db_field}' غير موجود داخل {model_name}.")
                 continue
 
             value = row.get(excel_col)
 
-            # معالجة العلاقات
+            # العلاقات
             if field.is_relation and field.many_to_one:
-                if value is None or str(value).strip() == "":
+                if value is None:
                     obj_data[db_field] = None
                 else:
-                    lookup = str(value).strip()
                     mapping_dict = relation_cache.get(db_field, {})
-                    instance = mapping_dict.get(lookup)
-
+                    instance = mapping_dict.get(str(value).strip())
                     if not instance:
-                        errors.append(f"سطر {row_idx+2}: ❌ '{lookup}' غير موجود في {db_field}")
-                        obj_data[db_field] = None
-                    else:
-                        obj_data[db_field] = instance
-
+                        errors.append(f"{db_field}: القيمة '{value}' غير موجودة")
+                    obj_data[db_field] = instance
             else:
-                # التعامل مع القيم الفارغة بشكل آمن
-                if pd.isna(value):
-                    value = None
-
                 obj_data[db_field] = value
 
-        if skip_row:
-            continue
-
-        try:
-            batch.append(model(**obj_data))
-        except Exception as e:
-            errors.append(f"سطر {row_idx+2}: خطأ أثناء إنشاء النموذج — {str(e)}")
-            continue
+        batch.append(model(**obj_data))
 
         if len(batch) >= batch_size:
-            try:
-                model.objects.bulk_create(batch, ignore_conflicts=True)
-                total += len(batch)
-                batch = []
-            except Exception as e:
-                errors.append(f"❌ خطأ أثناء الحفظ في bulk_create: {str(e)}")
-
-    if batch:
-        try:
             model.objects.bulk_create(batch, ignore_conflicts=True)
             total += len(batch)
-        except Exception as e:
-            errors.append(f"❌ خطأ أثناء الحفظ النهائي في bulk_create: {str(e)}")
+            batch = []
+
+    if batch:
+        model.objects.bulk_create(batch, ignore_conflicts=True)
+        total += len(batch)
 
     # سجل الاستيراد
     ImportLog.objects.create(
@@ -240,11 +216,7 @@ def import_step4_apply(request):
     if os.path.exists(temp_path):
         os.remove(temp_path)
 
-    if errors:
-        messages.warning(request, f"⚠ تم استيراد {total} سجل — مع {len(errors)} خطأ (عرض التفاصيل في السجلات).")
-    else:
-        messages.success(request, f"✔ تم استيراد {total} سجل بنجاح دون أخطاء.")
-
+    messages.success(request, f"✔ تم استيراد {total} سجل (أخطاء: {len(errors)})")
     return redirect("import_app:logs")
 
 # ================================================================
