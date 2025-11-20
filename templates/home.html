@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}نظام إدارة الجرد{% endblock %}
+
+{% block content %}
+
+<style>
+.home-box {
+    max-width: 900px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.home-title {
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.home-sub {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.home-links a {
+    display: block;
+    padding: 14px;
+    background: #0d6efd;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.home-links a:hover {
+    opacity: 0.9;
+}
+
+.note {
+    margin-top: 20px;
+    color: #777;
+    font-size: 14px;
+}
+</style>
+
+<div class="home-box">
+
+    <div class="home-title">📦 نظام إدارة الجرد - SPL</div>
+    <div class="home-sub">مرحبًا بك في النظام</div>
+
+    {% if user.is_authenticated %}
+    <div class="home-links">
+
+        {% if "admins" in groups or user.is_superuser %}
+            <a href="/inventory/admin/dashboard/">🛠 لوحة تحكم المدير</a>
+        {% endif %}
+
+        {% if "supervisors" in groups %}
+            <a href="/inventory/supervisor/sessions/">🧑‍💼 جلسات المشرف</a>
+        {% endif %}
+
+        {% if "employees" in groups %}
+            <a href="/inventory/sessions/">📋 جلسات الجرد الخاصة بي</a>
+            <a href="/inventory/sessions/start/">➕ بدء جلسة جرد جديدة</a>
+        {% endif %}
+
+    </div>
+
+    {% else %}
+        <p class="note">الرجاء تسجيل الدخول للوصول إلى النظام.</p>
+        <a class="home-links" href="/accounts/login/">دخول</a>
+    {% endif %}
+
+</div>
+
+{% endblock %}

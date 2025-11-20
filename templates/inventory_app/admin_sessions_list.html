@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}لوحة المدير - جميع جلسات الجرد{% endblock %}
+
+{% block content %}
+
+<style>
+    .page-container { max-width: 950px; margin: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+    th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
+
+    th { background: #0d6efd; color: white; }
+
+    .status-pill {
+        padding: 5px 12px; border-radius: 20px; font-size: 12px; color: #fff;
+    }
+    .st-in_progress { background:#0d6efd; }
+    .st-completed { background:#198754; }
+    .st-submitted_to_supervisor { background:#ffc107; color:#000; }
+    .st-supervisor_approved { background:#0aad3a; }
+    .st-supervisor_rejected { background:#dc3545; }
+
+    .filter-box {
+        background: #fff; padding: 14px; border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 18px;
+    }
+
+    .btn {
+        padding: 8px 14px; border-radius: 6px; text-decoration: none;
+        color: white; background: #0d6efd; display: inline-block;
+    }
+</style>
+
+<div class="page-container">
+
+    <h2>📋 جميع جلسات الجرد</h2>
+
+    <!-- الفلاتر -->
+    <div class="filter-box">
+        <form method="GET">
+            <label>الحالة:</label>
+            <select name="status">
+                <option value="">الكل</option>
+                <option value="in_progress">جاري الجرد</option>
+                <option value="completed">مكتملة</option>
+                <option value="submitted_to_supervisor">بانتظار المشرف</option>
+                <option value="supervisor_approved">معتمدة</option>
+                <option value="supervisor_rejected">مرفوضة</option>
+            </select>
+
+            <button class="btn" type="submit">🔍 بحث</button>
+        </form>
+    </div>
+
+    <!-- الجدول -->
+    <table>
+        <tr>
+            <th>المعرف</th>
+            <th>الموظف</th>
+            <th>المنطقة</th>
+            <th>المبنى</th>
+            <th>الحالة</th>
+            <th>عرض</th>
+        </tr>
+
+        {% for s in sessions %}
+        <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.employee.username }}</td>
+            <td>{{ s.region }}</td>
+            <td>{{ s.building }}</td>
+            <td>
+                <span class="status-pill st-{{ s.status }}">
+                    {{ s.get_status_display }}
+                </span>
+            </td>
+            <td>
+                <a href="{% url 'inventory_app:admin_session_detail' s.id %}" class="btn">عرض</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">لا توجد جلسات</td></tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+{% endblock %}

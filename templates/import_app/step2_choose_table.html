@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>📦 استيراد البيانات — اختيار الجدول</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <select name="table" class="form-select" required>
+        <option value="">-- اختر الجدول --</option>
+        {% for t in tables %}
+        <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
+    </select>
+
+    <button class="btn btn-primary mt-3">التالي</button>
+</form>
+
+{% endblock %}

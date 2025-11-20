@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}الجلسات بانتظار الموافقة{% endblock %}
+
+{% block content %}
+<h2>📋 الجلسات بانتظار الموافقة</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>الموظف</th>
+            <th>المنطقة</th>
+            <th>تاريخ البداية</th>
+            <th>الحالة</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in sessions %}
+        <tr>
+            <td>{{ s.employee }}</td>
+            <td>{{ s.region }}</td>
+            <td>{{ s.start_time }}</td>
+            <td>{{ s.get_status_display }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" class="text-center">لا توجد جلسات معلقة</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

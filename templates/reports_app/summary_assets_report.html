@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load report_filters %}
+{% block title %}التقرير الختامي للأصول{% endblock %}
+
+{% block content %}
+
+<h2>📦 التقرير الختامي للأصول</h2>
+
+<style>
+    .summary-box {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th {
+        background: #0d6efd;
+        color: #fff;
+        padding: 10px;
+        text-align: center;
+    }
+
+    td {
+        padding: 8px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+    }
+</style>
+
+<div class="summary-box">
+
+    <p>إجمالي الأصول: <strong>{{ total_assets|format_num }}</strong></p>
+    <p>الأصول المجرودة: <strong>{{ scanned|format_num }}</strong></p>
+    <p>غير المجرودة: <strong>{{ not_scanned|format_num }}</strong></p>
+    <p>الأصول المضافة حديثاً: <strong>{{ added_recently|format_num }}</strong></p>
+    <p>الأصول المفقودة: <strong>{{ lost_items|format_num }}</strong></p>
+
+</div>
+
+
+<div class="summary-box">
+    <a href="?export=1" class="btn-filter" style="background:green;margin-bottom:10px;">
+    📥 تصدير Excel
+    </a>
+    <h3>📍 أداء المناطق</h3>
+    
+
+    <table>
+        <tr>
+            <th>المنطقة</th>
+            <th>عدد الأصول</th>
+            <th>عدد المجرود</th>
+            <th>نسبة الإنجاز</th>
+        </tr>
+
+        {% for r in region_stats %}
+        <tr>
+            <td>{{ r.name }}</td>
+            <td>{{ r.assets_count }}</td>
+            <td>{{ r.scanned_count }}</td>
+            <td>
+                {% if r.assets_count > 0 %}
+                    {{ r.scanned_count|floatformat:2|div:r.assets_count|mul:100|floatformat:1 }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

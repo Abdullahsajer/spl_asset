@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم - المدير{% endblock %}
+
+{% block content %}
+
+<style>
+
+.dashboard {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 25px 0 10px;
+    color: #333;
+}
+
+.grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 18px;
+}
+
+.card {
+    background: #fff;
+    padding: 22px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: 0.2s;
+}
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.card-icon {
+    font-size: 35px;
+    margin-bottom: 10px;
+}
+
+.card-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #0d6efd;
+}
+
+.card-label {
+    font-size: 15px;
+    color: #555;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 10px;
+    background: #0d6efd;
+    color: white;
+    text-decoration: none;
+    font-size: 17px;
+    margin-top: 15px;
+    margin-right: 10px;
+}
+
+/* زر استيراد */
+.import-btn {
+    background: #198754 !important;
+}
+.import-btn:hover {
+    background: #146c43 !important;
+}
+
+/* === استبدال inline styles === */
+.hr-space {
+    margin: 30px 0;
+}
+
+.chart-canvas {
+    max-height: 300px;
+}
+
+</style>
+
+<div class="dashboard">
+
+    <h2>📊 لوحة تحكم المدير</h2>
+
+    <!-- ===== البطاقات ===== -->
+    <div class="grid-cards">
+
+        <div class="card">
+            <div class="card-icon">📦</div>
+            <div class="card-number">{{ total_sessions }}</div>
+            <div class="card-label">إجمالي الجلسات</div>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">✔️</div>
+            <div class="card-number">{{ completed }}</div>
+            <div class="card-label">جلسات مكتملة</div>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">⏳</div>
+            <div class="card-number">{{ submitted }}</div>
+            <div class="card-label">بانتظار المراجعة</div>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">✅</div>
+            <div class="card-number">{{ approved }}</div>
+            <div class="card-label">جلسات مقبولة</div>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">❌</div>
+            <div class="card-number">{{ rejected }}</div>
+            <div class="card-label">جلسات مرفوضة</div>
+        </div>
+
+    </div>
+
+    <!-- ===== أزرار الإدارة ===== -->
+    <a href="{% url 'inventory_app:admin_sessions_list' %}" class="action-btn">
+        🗂️ إدارة الجلسات
+    </a>
+
+    <!-- زر استيراد الأصول -->
+    <a href="{% url 'inventory_app:admin_import_assets' %}" class="action-btn import-btn">
+        📥 استيراد الأصول
+    </a>
+
+    <!-- زر استيراد المناطق -->
+    <a href="{% url 'locations_app:admin_import_regions' %}" class="action-btn import-btn">
+        🌍 استيراد المناطق
+    </a>
+
+    <!-- زر استيراد المدن -->
+    <a href="{% url 'locations_app:admin_import_cities' %}" class="action-btn import-btn">
+        🏙️ استيراد المدن
+    </a>
+
+    <!-- زر استيراد المباني -->
+    <a href="{% url 'locations_app:admin_import_buildings' %}" class="action-btn import-btn">
+        🏢 استيراد المباني
+    </a>
+    
+    <!-- زر النسخة الاحتياطية -->
+    <a href="{% url 'inventory_app:backup_full_system' %}" class="action-btn import-btn">
+        🧩 نسخة احتياطية كاملة للنظام
+    </a>
+
+    <!-- ❌ inline style → ✔ class -->
+    <hr class="hr-space">
+
+    <!-- ===== الرسوم البيانية ===== -->
+    <h3 class="section-title">📈 توزيع حالات الجلسات</h3>
+
+    <!-- ❌ inline style → ✔ class -->
+    <canvas id="pieChart" class="chart-canvas"></canvas>
+
+    <!-- ❌ inline style → ✔ class -->
+    <hr class="hr-space">
+
+    <div class="table-box">
+        <h3 class="section-title">🕘 أحدث الجلسات</h3>
+
+        <table>
+            <tr>
+                <th>رقم الجلسة</th>
+                <th>الموظف</th>
+                <th>الحالة</th>
+                <th>المنطقة</th>
+                <th>البناية</th>
+                <th>تاريخ البدء</th>
+            </tr>
+
+            {% for s in latest_sessions %}
+            <tr>
+                <td>{{ s.id }}</td>
+                <td>{{ s.employee.username }}</td>
+                <td>{{ s.status }}</td>
+                <td>{{ s.region.name }}</td>
+                <td>{{ s.building.name }}</td>
+                <td>{{ s.start_time|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">لا توجد جلسات حتى الآن</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-box">
+        <h3 class="section-title">🏅 أفضل الموظفين نشاطًا</h3>
+
+        <table>
+            <tr>
+                <th>الموظف</th>
+                <th>عدد الجلسات</th>
+            </tr>
+
+            {% for u in top_users %}
+            <tr>
+                <td>{{ u.employee__username }}</td>
+                <td>{{ u.count }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">لا يوجد نشاط مسجل</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+<!-- ===== Chart.js ===== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+var ctx = document.getElementById('pieChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: ["مكتملة", "بانتظار المراجعة", "مقبولة", "مرفوضة"],
+        datasets: [{
+            data: [
+                {{ completed }},
+                {{ submitted }},
+                {{ approved }},
+                {{ rejected }}
+            ],
+            backgroundColor: ["#198754", "#ffc107", "#0d6efd", "#dc3545"]
+        }]
+    }
+});
+</script>
+
+{% endblock %}

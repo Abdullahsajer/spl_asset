@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}تفاصيل الأصل{% endblock %}
+
+{% block content %}
+<h2>تفاصيل الأصل</h2>
+
+<p><strong>رمز الأصل:</strong> {{ asset.asset_code }}</p>
+<p><strong>الوصف:</strong> {{ asset.description }}</p>
+<p><strong>المبنى:</strong> {{ asset.building }}</p>
+
+{% endblock %}

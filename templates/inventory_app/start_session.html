@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}بدء جلسة جرد{% endblock %}
+
+{% block content %}
+
+<style>
+.start-box {
+    max-width: 650px;
+    margin: 35px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+
+.label {
+    margin-top: 15px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+.btn-start {
+    width: 100%;
+    padding: 14px;
+    margin-top: 25px;
+    font-size: 17px;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 8px;
+}
+</style>
+
+
+<div class="start-box">
+
+    <h3 style="text-align:center; margin-bottom:20px;">📦 بدء جلسة الجرد</h3>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- اختيار المنطقة -->
+        <label class="label">اختر المنطقة:</label>
+        <select id="region" name="region" required>
+            <option value="">اختر المنطقة</option>
+            {% for r in regions %}
+                <option value="{{ r.id }}">{{ r.name }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- اختيار المدينة -->
+        <label class="label">اختر المدينة:</label>
+        <select id="city" name="city" required>
+            <option value="">اختر المدينة</option>
+        </select>
+
+        <!-- اختيار المبنى -->
+        <label class="label">اختر المبنى:</label>
+        <select id="building" name="building" required>
+            <option value="">اختر المبنى</option>
+        </select>
+
+        <button type="submit" class="btn-start">بدء جلسة الجرد</button>
+
+    </form>
+
+</div>
+
+
+<!-- ========================= -->
+<!--     JavaScript AJAX       -->
+<!-- ========================= -->
+
+<script>
+// ==========================
+// 1) عند اختيار المنطقة → جلب المدن
+// ==========================
+document.getElementById("region").onchange = function () {
+    let regionId = this.value;
+
+    if (!regionId) return;
+
+    fetch("/inventory/api/get-cities/" + regionId + "/")
+        .then(response => response.json())
+        .then(data => {
+
+            let citySelect = document.getElementById("city");
+            citySelect.innerHTML = '<option value="">اختر المدينة</option>';
+
+            data.forEach(city => {
+                citySelect.innerHTML += `
+                    <option value="${city.id}">${city.name}</option>
+                `;
+            });
+
+            // تفريغ المباني عند تغيير المدينة
+            document.getElementById("building").innerHTML =
+                '<option value="">اختر المبنى</option>';
+        });
+};
+
+
+// ==========================
+// 2) عند اختيار المدينة → جلب المباني
+// ==========================
+document.getElementById("city").onchange = function () {
+    let cityId = this.value;
+
+    if (!cityId) return;
+
+    fetch("/inventory/api/get-buildings/" + cityId + "/")
+        .then(response => response.json())
+        .then(data => {
+
+            let buildingSelect = document.getElementById("building");
+            buildingSelect.innerHTML = '<option value="">اختر المبنى</option>';
+
+            data.forEach(b => {
+                buildingSelect.innerHTML += `
+                    <option value="${b.id}">${b.name}</option>
+                `;
+            });
+        });
+};
+</script>
+
+{% endblock %}

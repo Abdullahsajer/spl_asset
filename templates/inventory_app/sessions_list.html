@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}جلساتي{% endblock %}
+
+{% block content %}
+
+<style>
+    .session-list-container {
+        max-width: 750px;
+        margin: 0 auto;
+    }
+
+    .session-card {
+        background: #fff;
+        padding: 18px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 15px;
+        transition: transform .15s;
+    }
+
+    .session-card:hover {
+        transform: scale(1.015);
+    }
+
+    .session-header {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .session-info {
+        font-size: 14px;
+        color: #444;
+        margin-bottom: 6px;
+    }
+
+    .status-pill {
+        padding: 5px 12px;
+        border-radius: 20px;
+        color: white;
+        font-size: 12px;
+        display: inline-block;
+        margin-top: 5px;
+    }
+
+    .st-draft { background: #6c757d; }
+    .st-in_progress { background: #0d6efd; }
+    .st-submitted_to_supervisor { background: #ffc107; color:#000; }
+    .st-supervisor_rejected { background: #dc3545; }
+    .st-supervisor_approved { background: #198754; }
+</style>
+
+
+<h2 style="text-align:center; margin-bottom:25px;">📋 جلسات الجرد الخاصة بي</h2>
+
+<div class="session-list-container">
+
+    {% if sessions %}
+        {% for s in sessions %}
+
+            <div class="session-card">
+
+                <!-- عنوان الجلسة -->
+                <div class="session-header">
+                    جلسة رقم {{ s.id }}
+                </div>
+
+                <!-- معلومات -->
+                <div class="session-info"><b>الموقع:</b> {{ s.region }} - {{ s.city }} - {{ s.building }}</div>
+                <div class="session-info"><b>بدأت:</b> {{ s.start_time|date:"Y-m-d H:i" }}</div>
+
+                {% if s.end_time %}
+                <div class="session-info"><b>انتهت:</b> {{ s.end_time|date:"Y-m-d H:i" }}</div>
+                {% endif %}
+
+                <!-- الشارة -->
+                <span class="status-pill st-{{ s.status }}">
+                    {% if s.status == 'draft' %} مسودة
+                    {% elif s.status == 'in_progress' %} قيد الجرد
+                    {% elif s.status == 'submitted_to_supervisor' %} بانتظار المشرف
+                    {% elif s.status == 'supervisor_rejected' %} مرفوضة من المشرف
+                    {% elif s.status == 'supervisor_approved' %} معتمدة من المشرف
+                    {% endif %}
+                </span>
+
+                <br><br>
+
+                <!-- الأزرار حسب حالة الجلسة -->
+
+                {% if s.status == "draft" %}
+                    <a class="btn btn-warning w-100 mb-2"
+                       href="{% url 'inventory_app:live_scan' s.id %}">
+                       🔄 استكمال الجلسة
+                    </a>
+                {% endif %}
+
+                {% if s.status == "in_progress" %}
+                    <a class="btn btn-primary w-100 mb-2"
+                       href="{% url 'inventory_app:live_scan' s.id %}">
+                       ▶ متابعة الجرد
+                    </a>
+                {% endif %}
+
+                {% if s.status == "submitted_to_supervisor" %}
+                    <button class="btn btn-secondary w-100" disabled>
+                        ⏳ بانتظار مراجعة المشرف
+                    </button>
+                {% endif %}
+
+                {% if s.status == "supervisor_rejected" %}
+                    <a href="{% url 'inventory_app:session_detail' s.id %}"
+                       class="btn btn-danger w-100 mb-2">
+                       ❗ عرض سبب الرفض وتعديل الجرد
+                    </a>
+                {% endif %}
+
+                {% if s.status == "supervisor_approved" %}
+                    <a class="btn btn-success w-100" disabled>✔ معتمدة</a>
+                {% endif %}
+
+            </div>
+
+        {% endfor %}
+    {% else %}
+        <p style="text-align:center;color:#555;">لا توجد جلسات حتى الآن.</p>
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}الأصول{% endblock %}
+
+{% block content %}
+<h2>قائمة الأصول</h2>
+
+<ul>
+    {% for asset in assets %}
+        <li>
+            <a href="{% url 'assets_app:asset_detail' asset.id %}">
+                {{ asset.asset_code }} — {{ asset.description }}
+            </a>
+        </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

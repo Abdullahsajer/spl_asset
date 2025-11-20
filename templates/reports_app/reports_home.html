@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}لوحة التقارير{% endblock %}
+
+{% block content %}
+
+<h2>📊 لوحة التقارير</h2>
+
+<style>
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stat {
+        background: white;
+        padding: 20px;
+        border-radius: 14px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: 0.2s ease;
+    }
+    .stat:hover {
+        transform: scale(1.03);
+    }
+
+    .stat-number {
+        font-size: 30px;
+        color: #0d6efd;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+
+    .card-box {
+        background: #fff;
+        padding: 22px;
+        border-radius: 12px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: 0.2s;
+    }
+    .card-box:hover {
+        transform: scale(1.02);
+    }
+    .card-box a {
+        text-decoration: none;
+        font-size: 18px;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+
+    /* تحسين خاص للجوال */
+    @media (max-width: 480px) {
+        h2 {
+            font-size: 22px;
+            text-align: center;
+        }
+
+        .stat {
+            padding: 16px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+        }
+    }
+</style>
+
+<!-- 📦 البطاقات الأربعة -->
+<div class="summary-grid">
+    <div class="stat">
+        <div class="stat-number">{{ total_assets }}</div>
+        إجمالي الأصول
+    </div>
+    <div class="stat">
+        <div class="stat-number">{{ total_scanned }}</div>
+        الأصول المجرودة
+    </div>
+    <div class="stat">
+        <div class="stat-number">{{ total_missing }}</div>
+        الأصول المفقودة
+    </div>
+    <div class="stat">
+        <div class="stat-number">{{ total_new }}</div>
+        الأصول المضافة الجديدة
+    </div>
+</div>
+
+<!-- 📄 روابط التقارير -->
+<div class="card-box">
+    <a href="{% url 'reports_app:building_status_report' %}">🏢 تقرير حالة المباني</a>
+</div>
+
+<div class="card-box">
+    <a href="{% url 'reports_app:sessions_status_report' %}">📋 تقرير حالة الجلسات</a>
+</div>
+
+<div class="card-box">
+    <a href="{% url 'reports_app:summary_assets_report' %}">📦 التقرير الختامي للأصول</a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}تقرير حالة الجلسات{% endblock %}
+
+{% block content %}
+
+<h2>📋 تقرير حالة الجلسات</h2>
+
+<style>
+    .box {
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th {
+        background: #0d6efd;
+        color: #fff;
+        padding: 10px;
+        text-align: center;
+    }
+
+    td {
+        padding: 8px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+    }
+</style>
+
+<div class="box">
+    <p>إجمالي الجلسات: <strong>{{ counts.total }}</strong></p>
+    <p>مكتملة: <strong>{{ counts.completed }}</strong></p>
+    <p>معتمدة: <strong>{{ counts.approved }}</strong></p>
+    <p>مرفوضة: <strong>{{ counts.rejected }}</strong></p>
+    <p>قيد المراجعة: <strong>{{ counts.under_review }}</strong></p>
+</div>
+
+<div class="box">
+    <h3>تفاصيل الجلسات:</h3>
+    <a href="?export=1" class="btn-filter" style="background:green;margin-bottom:10px;">
+    📥 تصدير Excel
+    </a>
+
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>الموظف</th>
+            <th>المنطقة</th>
+            <th>الحالة</th>
+        </tr>
+
+        {% for s in sessions %}
+        <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.employee.username }}</td>
+            <td>{{ s.region }}</td>
+            <td>{{ s.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

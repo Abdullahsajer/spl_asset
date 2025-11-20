@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}استيراد المناطق والمباني{% endblock %}
+
+{% block content %}
+
+<style>
+.page-title {
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.form-container {
+    margin-top: 20px;
+}
+
+.form-label {
+    font-size: 16px;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.file-input {
+    margin-top: 5px;
+    padding: 10px;
+}
+
+.submit-btn {
+    margin-top: 15px;
+    padding: 10px 18px;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.submit-btn:hover {
+    background: #0a58ca;
+}
+
+.info-text {
+    margin-top: 20px;
+    color: gray;
+}
+</style>
+
+<h2 class="page-title">📥 استيراد المناطق - المدن - المباني</h2>
+
+<form method="POST" enctype="multipart/form-data" class="form-container">
+    {% csrf_token %}
+
+    <label for="file-input" class="form-label">📄 اختر ملف Excel:</label>
+    <input 
+        type="file" 
+        id="file-input"
+        name="file" 
+        accept=".xlsx,.xls" 
+        required 
+        class="file-input"
+        title="قم باختيار ملف Excel يحتوي على بيانات المناطق والمدن والمباني"
+    >
+
+    <button type="submit" class="submit-btn">
+        رفع الملف
+    </button>
+</form>
+
+<p class="info-text">
+يجب أن يحتوي ملف Excel على الأعمدة التالية:
+<br><strong>region_name – city_name – building_name</strong>
+</p>
+
+{% endblock %}

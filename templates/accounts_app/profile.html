@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}الملف الشخصي{% endblock %}
+
+{% block content %}
+<h2>الملف الشخصي</h2>
+<p>اسم المستخدم: {{ user.username }}</p>
+<p>الدور: {{ profile.get_role_display }}</p>
+{% endblock %}

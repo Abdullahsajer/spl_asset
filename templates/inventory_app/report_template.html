@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- مهم للهواتف ولتحذيرات Edge Tools -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- مهم للفهرسة وللتنقل والتحذيرات -->
+    <title>تقرير جلسة الجرد رقم {{ session.id }}</title>
+
+    <style>
+        body {
+            font-family: "Cairo", sans-serif;
+            direction: rtl;
+            margin: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 15px;
+            margin: 3px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background: #eee;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>تقرير جلسة الجرد رقم {{ session.id }}</h2>
+
+<p><strong>الموظف:</strong> {{ session.employee.username }}</p>
+<p><strong>المبنى:</strong> {{ session.building }}</p>
+<p><strong>وقت البدء:</strong> {{ session.start_time }}</p>
+<p><strong>وقت الإغلاق:</strong> {{ session.end_time }}</p>
+
+<table>
+    <tr>
+        <th>الباركود</th>
+        <th>الوصف</th>
+        <th>الحالة</th>
+        <th>وقت المسح</th>
+    </tr>
+
+    {% for item in items %}
+    <tr>
+        <td>{{ item.barcode }}</td>
+        <td>{{ item.asset.description }}</td>
+        <td>{{ item.status }}</td>
+        <td>{{ item.scanned_at|default:"-" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

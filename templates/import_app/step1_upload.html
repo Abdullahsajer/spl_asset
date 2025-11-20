@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>📥 استيراد البيانات — خطوة 1</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label>اختر ملف Excel:</label>
+    <input type="file" name="excel_file" class="form-control" required>
+
+    <button class="btn btn-primary mt-3">التالي</button>
+</form>
+
+{% endblock %}

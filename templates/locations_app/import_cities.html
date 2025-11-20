@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Import Cities{% endblock %}
+
+{% block content %}
+
+<style>
+.upload-box {
+    max-width: 500px;
+    margin: auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    text-align: center;
+}
+.upload-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+.upload-label {
+    font-size: 15px;
+    text-align: right;
+    display: block;
+    margin-bottom: 6px;
+}
+.upload-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    margin-bottom: 15px;
+}
+.upload-btn {
+    padding: 12px 22px;
+    background: #198754;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 10px;
+    font-size: 17px;
+}
+.upload-btn:hover {
+    background: #146c43;
+}
+</style>
+
+<div class="upload-box">
+    <h2 class="upload-title">📥 Import Cities</h2>
+
+    <p>
+        The Excel file must contain the columns:<br>
+        <b>region_name</b><br>
+        <b>city_name</b>
+    </p>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- إضافة label + id + title (حل مشكلة Axe) -->
+        <label for="file-input" class="upload-label">اختر ملف Excel:</label>
+        <input
+            type="file"
+            id="file-input"
+            name="file"
+            accept=".xlsx,.xls"
+            class="upload-input"
+            required
+            title="قم باختيار ملف Excel يحتوي على بيانات المدن"
+        >
+
+        <button type="submit" class="upload-btn">Upload File</button>
+    </form>
+
+    <br>
+    <a href="{% url 'inventory_app:admin_dashboard' %}">⬅ Back to Dashboard</a>
+</div>
+
+{% endblock %}

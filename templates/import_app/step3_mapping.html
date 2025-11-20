@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>🔗 مطابقة الأعمدة</h2>
+
+<form method="POST" action="{% url 'import_app:apply' %}">
+    {% csrf_token %}
+
+    <table class="table table-bordered">
+        <tr>
+            <th>عمود Excel</th>
+            <th>يرتبط بحقل</th>
+        </tr>
+
+        {% for col in excel_cols %}
+        <tr>
+            <td>{{ col }}</td>
+            <td>
+                <select name="map_{{ col }}" class="form-select">
+                    <option value="skip">تجاهله</option>
+                    {% for f in db_fields %}
+                    <option value="{{ f }}">{{ f }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <label>طريقة الاستيراد:</label>
+    <select name="mode" class="form-select">
+        <option value="add">➕ إضافة</option>
+        <option value="replace">♻ استبدال</option>
+    </select>
+
+    <button class="btn btn-success mt-3">تنفيذ الاستيراد</button>
+</form>
+
+{% endblock %}

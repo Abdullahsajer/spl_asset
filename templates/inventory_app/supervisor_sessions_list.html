@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}الجلسات بانتظار المراجعة - المشرف{% endblock %}
+
+{% block content %}
+
+<style>
+    .page-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+        margin-bottom: 20px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        background: #fff;
+        overflow: hidden;
+        border-radius: 10px;
+    }
+
+    th {
+        background: #0d6efd;
+        color: white;
+        padding: 12px;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .btn-view {
+        background: #0d6efd;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+        transition: 0.3s;
+    }
+
+    .btn-view:hover {
+        background: #0b5ed7;
+    }
+
+    .empty-box {
+        padding: 20px;
+        text-align: center;
+        font-size: 16px;
+        color: #555;
+    }
+</style>
+
+<div class="page-container">
+    <h2>📋 الجلسات التي تنتظر مراجعتك</h2>
+
+    {% if sessions %}
+    <table>
+        <tr>
+            <th>رقم الجلسة</th>
+            <th>الموظف</th>
+            <th>المنطقة</th>
+            <th>المدينة</th>
+            <th>المبنى</th>
+            <th>وقت البدء</th>
+            <th>إجراء</th>
+        </tr>
+
+        {% for s in sessions %}
+        <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.employee.username }}</td>
+            <td>{{ s.region.name }}</td>
+            <td>{{ s.city.name }}</td>
+            <td>{{ s.building.name }}</td>
+            <td>{{ s.start_time|date:"Y-m-d H:i" }}</td>
+            <td>
+                <a href="{% url 'inventory_app:supervisor_session_detail' s.id %}" class="btn-view">
+                    👁 عرض التفاصيل
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% else %}
+    <div class="empty-box">
+        لا توجد جلسات تنتظر المراجعة حالياً.
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
