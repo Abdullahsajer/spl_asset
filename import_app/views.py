@@ -120,7 +120,13 @@ def import_step4_apply(request):
     df = pd.read_excel(temp_path)
 
     app_label, model_name = selected_table.split(".")
-    model = apps.get_model(app_label, model_name)
+
+    # التحقق من صحة الجدول
+    try:
+        model = apps.get_model(app_label, model_name)
+    except LookupError:
+        messages.error(request, "❌ جدول غير موجود، الرجاء اختيار جدول صحيح.")
+        return redirect("import_app:step2")
 
     # استخراج المابات من POST
     mappings = {}
@@ -138,12 +144,19 @@ def import_step4_apply(request):
     # تحميل العلاقات Foreign Keys
     relation_cache = {}
     for excel_col, db_field in mappings.items():
-        field = model._meta.get_field(db_field)
 
+        # التحقق من وجود الحقل داخل الموديل
+        try:
+            field = model._meta.get_field(db_field)
+        except Exception:
+            messages.error(request, f"❌ الحقل '{db_field}' غير موجود داخل الموديل {model_name}.")
+            return redirect("import_app:step3")
+
+        # في حالة Foreign Key
         if field.is_relation and field.many_to_one:
             rel_model = field.related_model
             relation_cache[db_field] = {
-                obj.name.strip(): obj for obj in rel_model.objects.all()
+                str(obj.name).strip(): obj for obj in rel_model.objects.all()
             }
 
     errors = []
@@ -152,21 +165,30 @@ def import_step4_apply(request):
     batch_size = 2000
 
     for _, row in df.iterrows():
+
         obj_data = {}
 
         for excel_col, db_field in mappings.items():
-            field = model._meta.get_field(db_field)
-            value = row.get(excel_col, None)
 
+            # حماية كاملة لمنع FieldDoesNotExist
+            try:
+                field = model._meta.get_field(db_field)
+            except:
+                errors.append(f"❌ الحقل '{db_field}' غير موجود داخل {model_name}.")
+                continue
+
+            value = row.get(excel_col)
+
+            # العلاقات
             if field.is_relation and field.many_to_one:
-                mapping_dict = relation_cache.get(db_field, {})
-                instance = mapping_dict.get(str(value).strip())
-
-                if not instance:
-                    errors.append(f"{db_field}: القيمة '{value}' غير موجودة")
-                    instance = None
-
-                obj_data[db_field] = instance
+                if value is None:
+                    obj_data[db_field] = None
+                else:
+                    mapping_dict = relation_cache.get(db_field, {})
+                    instance = mapping_dict.get(str(value).strip())
+                    if not instance:
+                        errors.append(f"{db_field}: القيمة '{value}' غير موجودة")
+                    obj_data[db_field] = instance
             else:
                 obj_data[db_field] = value
 
@@ -177,12 +199,11 @@ def import_step4_apply(request):
             total += len(batch)
             batch = []
 
-    # آخر دفعة
     if batch:
         model.objects.bulk_create(batch, ignore_conflicts=True)
         total += len(batch)
 
-    # حفظ سجل الاستيراد
+    # سجل الاستيراد
     ImportLog.objects.create(
         table_name=selected_table,
         rows_count=total,
@@ -191,14 +212,12 @@ def import_step4_apply(request):
         message="\n".join(errors)[:1500]
     )
 
-    # حذف TEMP
+    # حذف الملف المؤقت
     if os.path.exists(temp_path):
         os.remove(temp_path)
 
     messages.success(request, f"✔ تم استيراد {total} سجل (أخطاء: {len(errors)})")
     return redirect("import_app:logs")
-
-
 
 # ================================================================
 # 📜 عرض السجلات (Logs)
