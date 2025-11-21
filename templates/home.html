@@ -57,7 +57,10 @@
     <div class="home-links">
 
         {% if "admins" in groups or user.is_superuser %}
-            <a href="/inventory/admin/dashboard/">🛠 لوحة تحكم المدير</a>
+            <a href="/inventory/admin/dashboard/">⚙️ لوحة تحكم المدير</a>
+            <a href="{% url 'inventory_app:admin_sessions_list' %}"> 🗂️ إدارة الجلسات</a>
+            <a href="/import/">📥 استيراد البيانات</a>
+            <a href="/import/logs/">📊 سجلات الاستيراد</a>
         {% endif %}
 
         {% if "supervisors" in groups %}
