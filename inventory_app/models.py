@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-from locations_app.models import Region, City, Building
+from locations_app.models import RegionGroup, Region, City, Building
 from assets_app.models import Asset
 
 
@@ -30,7 +30,7 @@ class InventorySession(models.Model):
         verbose_name="موظف الجرد"
     )
 
-    # المشرف المراجع
+    # المشرف
     supervisor = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -39,15 +39,27 @@ class InventorySession(models.Model):
         verbose_name="المشرف"
     )
 
-    # موقع الجلسة
+    # الإقليم
+    region_group = models.ForeignKey(
+        RegionGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="الإقليم"
+    )
+
+    # المنطقة
     region = models.ForeignKey(
         Region, on_delete=models.SET_NULL,
         null=True, verbose_name="المنطقة"
     )
+
+    # المدينة
     city = models.ForeignKey(
         City, on_delete=models.SET_NULL,
         null=True, verbose_name="المدينة"
     )
+
+    # المبنى
     building = models.ForeignKey(
         Building, on_delete=models.SET_NULL,
         null=True, verbose_name="المبنى"
@@ -58,7 +70,8 @@ class InventorySession(models.Model):
         auto_now_add=True, verbose_name="وقت بدء الجلسة"
     )
     end_time = models.DateTimeField(
-        null=True, blank=True, verbose_name="وقت انتهاء الجلسة"
+        null=True, blank=True,
+        verbose_name="وقت انتهاء الجلسة"
     )
 
     # الحالة
@@ -90,6 +103,7 @@ class InventorySession(models.Model):
     @property
     def items_count(self):
         return self.items.count()
+
 
 
 # ======================================
@@ -134,7 +148,6 @@ class InventoryItem(models.Model):
         verbose_name="وقت المسح"
     )
 
-    # لما يضيف أصل جديد من الشاشة
     added_manually = models.BooleanField(
         default=False,
         verbose_name="أضيف يدوياً"

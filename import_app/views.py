@@ -128,7 +128,7 @@ def import_step4_apply(request):
         messages.error(request, "❌ جدول غير موجود، الرجاء اختيار جدول صحيح.")
         return redirect("import_app:step2")
 
-    # استخراج المابات من POST
+    # استخراج المابات
     mappings = {}
     for key, value in request.POST.items():
         if key.startswith("map_") and value != "skip":
@@ -152,7 +152,7 @@ def import_step4_apply(request):
             messages.error(request, f"❌ الحقل '{db_field}' غير موجود داخل الموديل {model_name}.")
             return redirect("import_app:step3")
 
-        # في حالة Foreign Key
+        # إذا كان الحقل Foreign Key
         if field.is_relation and field.many_to_one:
             rel_model = field.related_model
             relation_cache[db_field] = {
@@ -164,20 +164,19 @@ def import_step4_apply(request):
     batch = []
     batch_size = 2000
 
+    # -----------------------------
+    # 🔥 أهم نقطة: نستخدم فقط الحقول المختارة
+    # -----------------------------
     for _, row in df.iterrows():
 
         obj_data = {}
 
         for excel_col, db_field in mappings.items():
 
-            # حماية كاملة لمنع FieldDoesNotExist
-            try:
-                field = model._meta.get_field(db_field)
-            except:
-                errors.append(f"❌ الحقل '{db_field}' غير موجود داخل {model_name}.")
-                continue
-
+            # الحصول على قيمة العمود
             value = row.get(excel_col)
+
+            field = model._meta.get_field(db_field)
 
             # العلاقات
             if field.is_relation and field.many_to_one:
